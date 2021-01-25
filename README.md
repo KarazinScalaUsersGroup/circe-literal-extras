@@ -27,7 +27,7 @@ The following interpolated strings are successfully verified on compile time. `c
 
 
 val rawJson: Json =
-  encode"""
+    encode"""
           {
             "int": 42,
             "bar": {
@@ -47,6 +47,9 @@ val rawJson: Json =
           }
           """
           
+
+val bool: Boolean = ...
+
 val booleanInlinedJson: Json =
     encode"""
             {
@@ -68,6 +71,9 @@ val booleanInlinedJson: Json =
             }
             """
             
+
+val int: Int = ...
+
 val intInlinedJson: Json =
     encode"""
             {
@@ -88,7 +94,10 @@ val intInlinedJson: Json =
               ]
             }
             """
-            
+           
+
+val str: String = ...
+
 val stringInlinedJson: Json =
     encode"""
             {
@@ -110,21 +119,21 @@ val stringInlinedJson: Json =
             }
             """
             
-val buzzes: List[Buzz] = ???
+val buzzes: List[Buzz] = ...
 
 val buzzesInlinedJson: Json =
-        encode"""
-                {
-                  "int": 42,
-                  "bar": {
-                    "str": "str",
-                    "bool": true
-                   },
-                  "buzzes": $buzzes
-                }
-                """
+    encode"""
+            {
+              "int": 42,
+              "bar": {
+                "str": "str",
+                "bool": true
+               },
+              "buzzes": $buzzes
+            }
+            """
    
-val bar = ???
+val bar: Bar = ...
 
 val barInlinedJson: Json =
     encode"""
@@ -144,11 +153,12 @@ val barInlinedJson: Json =
             }
             """
 
+val foo: Foo = ...
 
 val fooInlinedJson: Json =
-encode"""
-        $foo
-        """
+    encode"""
+            $foo
+            """
 ```
 
 It is not required to use the same types as defined in type schema. The types which preserve the type schema are also accepted:
@@ -156,13 +166,16 @@ It is not required to use the same types as defined in type schema. The types wh
 ```scala
 case class BuzzLike(int: Int, bool: Boolean)
 case class BarLike(str: String, bool: Boolean)
-case class FooLike(int: Int, bar: Option[BarLike], buzzes: List[BuzzLike])
+case class FooLike(int: Int, bar: BarLike, buzzes: List[BuzzLike]) // `bar` is required 
 
 ...
 
-encode"""
-        $fooLike
-        """
+val fooLike: FooLike = ...
+
+val fooLikeInlinedJson: Json =
+    encode"""
+            $fooLike
+            """
 ```
 
 # License
