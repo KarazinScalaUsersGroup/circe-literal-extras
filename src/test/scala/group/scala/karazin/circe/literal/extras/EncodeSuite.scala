@@ -3,8 +3,7 @@ package group.scala.karazin.circe.literal.extras
 import cats.implicits._
 import io.circe.syntax._
 import io.circe.parser
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Json, Encoder, ParsingFailure, ACursor, HCursor}
+import io.circe.{Json, JsonObject}
 import org.scalacheck._
 import org.scalacheck.Prop._
 
@@ -20,6 +19,12 @@ object EncodeSuite:
   object generators:
 
     val genStr: Gen[String] = Gen.alphaStr
+    
+    val genJsonObject: Gen[JsonObject] = for {
+      map <- Arbitrary.arbitrary[Map[String, String]]
+    } yield JsonObject.fromMap(map collect { 
+      case (key, value) if key.nonEmpty => key -> Json.fromString(value) 
+    })
     
     val genBar: Gen[Bar] = for {
       str   <- Arbitrary.arbitrary[String]
@@ -42,18 +47,21 @@ object EncodeSuite:
     } yield BuzzLike(int, bool)
     
     val genFoo: Gen[Foo] = for {
-      int   <- Arbitrary.arbitrary[Int]
-      bar   <- Arbitrary.arbitrary[Option[Bar]]
-      buzz  <- Arbitrary.arbitrary[List[Buzz]]
-    } yield Foo(int, bar, buzz)
+      int  <- Arbitrary.arbitrary[Int]
+      bar  <- Arbitrary.arbitrary[Option[Bar]]
+      buzz <- Arbitrary.arbitrary[List[Buzz]]
+      qux  <- Arbitrary.arbitrary[JsonObject]
+    } yield Foo(int, bar, buzz, qux)
     
     val genFooLike: Gen[FooLike] = for {
-      int   <- Arbitrary.arbitrary[Int]
-      bar   <- Arbitrary.arbitrary[Option[Bar]]
-      buzz  <- Arbitrary.arbitrary[List[Buzz]]
-    } yield FooLike(int, bar, buzz)
+      int  <- Arbitrary.arbitrary[Int]
+      bar  <- Arbitrary.arbitrary[Option[Bar]]
+      buzz <- Arbitrary.arbitrary[List[Buzz]]
+      qux  <- Arbitrary.arbitrary[JsonObject]
+    } yield FooLike(int, bar, buzz, qux)
 
     given Arbitrary[String] = Arbitrary(genStr)
+    given Arbitrary[JsonObject] = Arbitrary(genJsonObject)
     given Arbitrary[Buzz] = Arbitrary(genBuzz)
     given Arbitrary[BuzzLike] = Arbitrary(genBuzzLike)
     given Arbitrary[Bar] = Arbitrary(genBar)
@@ -88,7 +96,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                     "int": 42,
                     "bool": false
                   }
-                ]
+                ],
+                "qux": {
+                  "str": "str"  
+                }
               }
               """
 
@@ -110,7 +121,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 "int": 42,
                 "bool": false
               }
-            ]
+            ],
+            qux: {
+              "str": "str"
+            }
           }
           """
         ).toOption.get                
@@ -140,7 +154,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                       "int": 42,
                       "bool": $bool
                     }
-                  ]
+                  ],
+                  "qux": {
+                    "bool": $bool
+                  }
                 }
                 """
 
@@ -162,7 +179,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 "int": 42,
                 "bool": $bool
               }
-            ]
+            ],
+            "qux": {
+              "bool": $bool
+            }
           }
           """
         ).toOption.get   
@@ -193,7 +213,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                       "int": $int,
                       "bool": false
                     }
-                  ]
+                  ],
+                  "qux": {
+                    "int": $int
+                  }
                 }
                 """
 
@@ -215,7 +238,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 "int": $int,
                 "bool": false
               }
-            ]
+            ],
+            "qux": {
+              "int": $int
+            }
           }
           """
         ).toOption.get  
@@ -246,7 +272,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                       "int": 42,
                       "bool": false
                     }
-                  ]
+                  ],
+                  "qux": {
+                    "str": $str
+                  }
                 }
                 """
 
@@ -268,7 +297,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bool": false
                 }
-              ]
+              ],
+              "qux": {
+                "str": "$str"
+              }
             }
             """  
         ).toOption.get  
@@ -276,6 +308,142 @@ class EncodeSuite extends munit.ScalaCheckSuite:
       assertEquals(result, expected)
 
     }
+  }
+  
+  test("empty inlined json object parsing") {
+
+    val result =
+      encode"""
+              {
+                "int": 42,
+                "bar": {
+                  "str": "str",
+                  "bool": true
+                 },
+                "buzzes": [
+                  {
+                    "int": 42,
+                    "bool": true
+                  },
+                  {
+                    "int": 42,
+                    "bool": false
+                  }
+                ],
+                "qux": ${JsonObject.fromMap(Map.empty[String, Json])}
+              }
+              """
+
+    val expected =  
+      parser.parse(  
+        s"""
+          {
+            "int": 42,
+            "bar": {
+              "str": "str",
+              "bool": true
+             },
+            "buzzes": [
+              {
+                "int": 42,
+                "bool": true
+              },
+              {
+                "int": 42,
+                "bool": false
+              }
+            ],
+            "qux": { }
+          }
+          """  
+      ).toOption.get  
+
+    assertEquals(result, expected)
+  
+  }
+  
+  property("inlined json object parsing") {
+
+    forAll { (jsonObject: JsonObject) =>
+      
+      val result =
+        encode"""
+                {
+                  "int": 42,
+                  "bar": {
+                    "str": "str",
+                    "bool": true
+                   },
+                  "buzzes": [
+                    {
+                      "int": 42,
+                      "bool": true
+                    },
+                    {
+                      "int": 42,
+                      "bool": false
+                    }
+                  ],
+                  "qux": $jsonObject
+                }
+                """
+
+      val expected =  
+        parser.parse(  
+          s"""
+            {
+              "int": 42,
+              "bar": {
+                "str": "str",
+                "bool": true
+               },
+              "buzzes": [
+                {
+                  "int": 42,
+                  "bool": true
+                },
+                {
+                  "int": 42,
+                  "bool": false
+                }
+              ],
+              "qux": ${jsonObject.noSpaces}
+            }
+            """  
+        ).toOption.get  
+
+      assertEquals(result, expected)
+
+    }
+  }
+  
+  test("corrupted json object parsing compile error") {
+
+    compileErrors(
+      """
+        encode\"\"\"
+                {
+                  "int": 42,
+                  "bar": {
+                    "int": 42,
+                    "bool": true
+                  },
+                  "buzzes": [
+                    {
+                      "int": 42,
+                      "bool": true
+                    },
+                    {
+                      "int": 42,
+                      "bool": false
+                    }
+                  ],
+                  "qux": "corrupted"
+                }
+        \"\"\"
+      """        
+    )
+
   }
 
   test("empty buzzes array parsing") {
@@ -288,7 +456,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "str": "str",
                   "bool": true
                  },
-                "buzzes": []
+                "buzzes": [],
+                "qux": { }
               }
               """
 
@@ -301,7 +470,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
               "str": "str",
               "bool": true
              },
-            "buzzes": []
+            "buzzes": [],
+            "qux": { }
           }
           """  
       ).toOption.get  
@@ -321,7 +491,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                     "str": "str",
                     "bool": true
                    },
-                  "buzzes": $buzzes
+                  "buzzes": $buzzes,
+                  "qux": { }
                 }
                 """
 
@@ -339,7 +510,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": ${buzz.int}, 
                   "bool": ${buzz.bool} 
                 }""" } mkString ", "
-              }]
+              }],
+              "qux": { }
             }
             """  
         ).toOption.get
@@ -370,14 +542,15 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                       "int": 42,
                       "bool": "corrupted"
                     }
-                  ]
+                  ],
+                  "qux": { }
                 }
         \"\"\"
       """        
     )
 
   }
-  
+
   property("empty bar parsing") {
 
     forAll { (str: String) =>
@@ -395,7 +568,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                       "int": 42,
                       "bool": false
                     }
-                  ]
+                  ],
+                  "qux": { }
                 }
                 """
 
@@ -413,7 +587,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bool": false
                 }
-              ]
+              ],
+              "qux": { }
             }
             """  
         ).toOption.get
@@ -441,7 +616,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                       "int": 42,
                       "bool": false
                     }
-                  ]
+                  ],
+                  "qux": { }
                 }
                 """
 
@@ -463,7 +639,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 "int": 42,
                 "bool": false
               }
-            ]
+            ],
+            "qux": { }
           }
           """
         ).toOption.get                
@@ -491,7 +668,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                       "int": 42,
                       "bool": false
                     }
-                  ]
+                  ],
+                  "qux": { }
                 }
                 """
 
@@ -513,7 +691,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 "int": 42,
                 "bool": false
               }
-            ]
+            ],
+            "qux": { }
           }
           """
         ).toOption.get
@@ -543,13 +722,14 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                       "int": 42,
                       "bool": false
                     }
-                  ]
+                  ],
+                  "qux": { }
                 }
         \"\"\"
       """
     )
   }  
-    
+
   property("inlined foo object parsing") {
 
     forAll { (foo: Foo) =>
@@ -579,7 +759,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "bool": ${buzz.bool}
                } 
                """} mkString ","
-            }]
+            }],
+            "qux": ${foo.qux.noSpaces}
           }
           """
         )   
@@ -618,7 +799,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "bool": ${buzz.bool}
                } 
                """} mkString ","
-            }]
+            }],
+            "qux": ${fooLike.qux.noSpaces}
           }
           """
         )   

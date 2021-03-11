@@ -3,22 +3,15 @@ package group.scala.karazin.circe.literal.extras
 import cats.implicits._
 import io.circe.syntax._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import io.circe.{Json, Encoder, ParsingFailure, ACursor, HCursor}
+import io.circe.{Json, JsonObject, Encoder, Codec}
 
 object model:
-  case class Buzz(int: Int, bool: Boolean)
-  case class BuzzLike(int: Int, bool: Boolean)
-  case class Bar(str: String, bool: Boolean)
-  case class BarLike(str: String, bool: Boolean)
-  case class Foo(int: Int, bar: Option[Bar], buzzes: List[Buzz])
-  case class FooLike(int: Int, bar: Option[Bar], buzzes: List[Buzz])
-
-  given Encoder[Bar] = deriveEncoder[Bar]
-  given Encoder[BarLike] = deriveEncoder[BarLike]
-  given Encoder[Buzz] = deriveEncoder[Buzz]
-  given Encoder[BuzzLike] = deriveEncoder[BuzzLike]
-  given Encoder[Foo] = deriveEncoder[Foo]
-  given Encoder[FooLike] = deriveEncoder[FooLike]
+  case class Buzz(int: Int, bool: Boolean) derives Codec.AsObject
+  case class BuzzLike(int: Int, bool: Boolean) derives Codec.AsObject
+  case class Bar(str: String, bool: Boolean) derives Codec.AsObject
+  case class BarLike(str: String, bool: Boolean) derives Codec.AsObject
+  case class Foo(int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
+  case class FooLike(int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
 
   given tToJson[T: Encoder]: Conversion[T, Json] = summon[Encoder[T]](_)
   given optionToJson[T: Encoder]: Conversion[Option[T], Json] = summon[Encoder[Option[T]]](_)

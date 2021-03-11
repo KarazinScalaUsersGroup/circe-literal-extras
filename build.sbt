@@ -2,7 +2,6 @@ import Dependencies._
 
 lazy val root = project
   .in(file("."))
-  .settings(organization := "group.scala.karazin")
   .settings(name := "circe-literal-extras")
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= dependencies)
@@ -14,9 +13,10 @@ lazy val dependencies = circe ++ munit
 testFrameworks += new TestFramework("munit.Framework")
 
 lazy val commonSettings = Seq(
-    scalaVersion := "3.0.0-RC1",
-    organization := "karazin.scala.group",
-    version      := "0.1.0-SNAPSHOT",
+    scalaVersion     := "3.0.0-RC1",
+    organization     := "group.scala.karazin",
+    organizationName := "Karazin Scala Users Group",
+    version          := "0.1.0-SNAPSHOT",
     scalacOptions ++= Seq(
         "-deprecation",
         "-unchecked",

@@ -3,7 +3,7 @@ package group.scala.karazin.circe.literal.extras
 import cats.implicits.{given, _}
 import io.circe.parser
 import io.circe.syntax._
-import io.circe.{Json, Encoder, ParsingFailure, ACursor, HCursor}
+import io.circe.{Json, JsonObject, Encoder, ACursor, HCursor}
 
 import scala.quoted._
 
@@ -16,6 +16,7 @@ object macros:
     private val BooleanUnit = true
     private val IntUnit = 0
     private val StringUnit = ""
+    private val JsonObjectUnit = JsonObject.empty
     
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
@@ -146,6 +147,9 @@ object macros:
         case '[Option[t]] => 
           deconstructArgument[T]
     
+        case '[JsonObject] =>
+          Json.fromJsonObject(JsonObjectUnit)
+    
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])      
     
@@ -223,12 +227,12 @@ object macros:
           
         case '[Option[t]] => 
           validateJsonSchema[t](key, cursor)
+    
+        case '[Boolean] | '[Int] | '[String] | '[JsonObject] => 
+          validatePrimitives[T](key, cursor)
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           deconstructTypeSchemaProduct[t](key, cursor)      
-
-        case '[Boolean] | '[Int] | '[String]=> 
-          validatePrimitives[T](key, cursor)
 
         case '[unexpected] =>
           report.throwError(s"Macros implementation error. Unsupported type `${Type.show[unexpected]}`")
@@ -244,6 +248,9 @@ object macros:
   
           case '[String] =>
             handleError(key, "String", cursor.as[String])
+    
+          case '[JsonObject] => 
+            handleError(key, "JsonObject", cursor.as[JsonObject])
         
         def handleError(key: String, promitiveType: String, result: Either[Throwable, _]): Unit = 
           
