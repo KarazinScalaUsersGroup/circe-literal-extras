@@ -17,6 +17,7 @@ object macros:
     private val IntUnit = 0
     private val StringUnit = ""
     private val JsonObjectUnit = JsonObject.empty
+    private val ShortUnit = 0
     
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
@@ -161,9 +162,12 @@ object macros:
     
         case '[String] =>
           Json.fromString(StringUnit)
+
+        case '[Short] =>
+          Json.fromInt(ShortUnit)
       
         case '[tpe] =>
-          report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, Boolean, Int, String but found `${Type.show[tpe]}`")
+          report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, Boolean, Int, String, Short but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
     
@@ -228,7 +232,7 @@ object macros:
         case '[Option[t]] => 
           validateJsonSchema[t](key, cursor)
     
-        case '[Boolean] | '[Int] | '[String] | '[JsonObject] => 
+        case '[Boolean] | '[Int] | '[String] | '[JsonObject] | '[Short] =>
           validatePrimitives[T](key, cursor)
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
@@ -251,6 +255,9 @@ object macros:
     
           case '[JsonObject] => 
             handleError(key, "JsonObject", cursor.as[JsonObject])
+
+          case '[Short] =>
+            handleError(key, "Short", cursor.as[Short])
         
         def handleError(key: String, promitiveType: String, result: Either[Throwable, _]): Unit = 
           
