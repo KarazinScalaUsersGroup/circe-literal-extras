@@ -29,22 +29,26 @@ object EncodeSuite:
     val genBar: Gen[Bar] = for {
       str   <- Arbitrary.arbitrary[String]
       bool  <- Arbitrary.arbitrary[Boolean]
-    } yield Bar(str, bool)
+      unit  <- Arbitrary.arbitrary[Unit]
+    } yield Bar(str, bool, unit)
 
     val genBarLike: Gen[BarLike] = for {
       str   <- Arbitrary.arbitrary[String]
       bool  <- Arbitrary.arbitrary[Boolean]
-    } yield BarLike(str, bool)
+      unit  = ()
+    } yield BarLike(str, bool, unit)
     
     val genBuzz: Gen[Buzz] = for {
       int   <- Arbitrary.arbitrary[Int]
       bool  <- Arbitrary.arbitrary[Boolean]
-    } yield Buzz(int, bool)
+      short  <- Arbitrary.arbitrary[Short]
+    } yield Buzz(int, bool, short)
     
     val genBuzzLike: Gen[BuzzLike] = for {
       int   <- Arbitrary.arbitrary[Int]
       bool  <- Arbitrary.arbitrary[Boolean]
-    } yield BuzzLike(int, bool)
+      short  <- Arbitrary.arbitrary[Short]
+    } yield BuzzLike(int, bool, short)
     
     val genFoo: Gen[Foo] = for {
       int  <- Arbitrary.arbitrary[Int]
@@ -772,7 +776,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "int": 42,
-                    "bool": "corrupted"
+                    "bool": "corrupted",
+                    "unit": { }
                   },
                   "buzzes": [
                     {
@@ -810,8 +815,9 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             ${foo.bar.fold(""""bar": null,""") { bar =>
               s"""
                 "bar": {
-                  "str": "${bar.str}",
-                  "bool": ${bar.bool}
+                  "str": ${bar.str},
+                  "bool": ${bar.bool},
+                  "unit": ${bar.unit}
                 }, 
               """ 
             }}
@@ -851,8 +857,9 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             ${fooLike.bar.fold(""""bar": null,""") { bar =>
               s"""
                 "bar": {
-                  "str": "${bar.str}",
-                  "bool": ${bar.bool}
+                  "str": ${bar.str},
+                  "bool": ${bar.bool},
+                  "unit": ${bar.unit}
                 }, 
               """ 
             }}

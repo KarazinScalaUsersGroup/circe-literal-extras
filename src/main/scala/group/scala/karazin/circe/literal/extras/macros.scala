@@ -14,8 +14,11 @@ object macros:
   object encode:
     
     private val BooleanUnit = true
-    private val IntUnit = 0
     private val StringUnit = ""
+
+    private val IntUnit = 0
+    private val ShortUnit = 0
+
     private val JsonObjectUnit = JsonObject.empty
     private val UnitUnit = JsonObject.empty
     
@@ -165,6 +168,9 @@ object macros:
 
         case '[Short] =>
           Json.fromInt(ShortUnit)
+
+        case '[Unit] =>
+          Json.fromJsonObject(UnitUnit)
       
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, Boolean, Int, String, Short, Unit but found `${Type.show[tpe]}`")
@@ -232,7 +238,7 @@ object macros:
         case '[Option[t]] => 
           validateJsonSchema[t](key, cursor)
     
-        case '[Boolean] | '[Int] | '[String] | '[JsonObject] | '[Short] =>
+        case '[Boolean] | '[Int] | '[String] | '[JsonObject] | '[Short] | '[Unit]=>
           validatePrimitives[T](key, cursor)
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
