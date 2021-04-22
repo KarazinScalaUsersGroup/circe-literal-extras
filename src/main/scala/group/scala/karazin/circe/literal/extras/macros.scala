@@ -17,7 +17,7 @@ object macros:
     private val IntUnit = 0
     private val StringUnit = ""
     private val JsonObjectUnit = JsonObject.empty
-    private val ShortUnit = 0
+    private val UnitUnit = JsonObject.empty
     
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
@@ -167,7 +167,7 @@ object macros:
           Json.fromInt(ShortUnit)
       
         case '[tpe] =>
-          report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, Boolean, Int, String, Short but found `${Type.show[tpe]}`")
+          report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, Boolean, Int, String, Short, Unit but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
     
@@ -258,6 +258,9 @@ object macros:
 
           case '[Short] =>
             handleError(key, "Short", cursor.as[Short])
+
+          case '[Unit] =>
+            handleError(key, "Unit", cursor.as[Unit])
         
         def handleError(key: String, promitiveType: String, result: Either[Throwable, _]): Unit = 
           

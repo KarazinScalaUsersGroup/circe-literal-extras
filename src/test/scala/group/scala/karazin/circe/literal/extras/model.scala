@@ -6,10 +6,10 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Json, JsonObject, Encoder, Codec}
 
 object model:
-  case class Buzz(int: Int, bool: Boolean) derives Codec.AsObject
-  case class BuzzLike(int: Int, bool: Boolean) derives Codec.AsObject
-  case class Bar(str: String, bool: Boolean) derives Codec.AsObject
-  case class BarLike(str: String, bool: Boolean) derives Codec.AsObject
+  case class Buzz(int: Int, bool: Boolean, short: Short) derives Codec.AsObject
+  case class BuzzLike(int: Int, bool: Boolean, short: Short) derives Codec.AsObject
+  case class Bar(str: String, bool: Boolean, unit: Unit) derives Codec.AsObject
+  case class BarLike(str: String, bool: Boolean, unit: Unit) derives Codec.AsObject
   case class Foo(int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
   case class FooLike(int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
 

@@ -85,16 +85,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 "int": 42,
                 "bar": {
                   "str": "str",
-                  "bool": true
+                  "bool": true,
+                  "unit": { }
                  },
                 "buzzes": [
                   {
                     "int": 42,
-                    "bool": true
+                    "bool": true,
+                    "short": 4
                   },
                   {
                     "int": 42,
-                    "bool": false
+                    "bool": false,
+                    "short": 4
                   }
                 ],
                 "qux": {
@@ -110,16 +113,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             "int": 42,
             "bar": {
                "str": "str",
-               "bool": true
+               "bool": true,
+               "unit": { }
             },
             "buzzes": [
               {
                 "int": 42,
-                "bool": true
+                "bool": true,
+                "short": 4
               },
               {
                 "int": 42,
-                "bool": false
+                "bool": false,
+                "short": 4
               }
             ],
             qux: {
@@ -143,16 +149,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "str": "str",
-                    "bool": $bool
+                    "bool": $bool,
+                    "unit": { }
                    },
                   "buzzes": [
                     {
                       "int": 42,
-                      "bool": $bool
+                      "bool": $bool,
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": $bool
+                      "bool": $bool,
+                      "short": 4
                     }
                   ],
                   "qux": {
@@ -168,16 +177,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             "int": 42,
             "bar": {
                "str": "str",
-               "bool": $bool
+               "bool": $bool,
+               "unit": { }
             },
             "buzzes": [
               {
                 "int": 42,
-                "bool": $bool
+                "bool": $bool,
+                "short": 4
               },
               {
                 "int": 42,
-                "bool": $bool
+                "bool": $bool,
+                "short": 4
               }
             ],
             "qux": {
@@ -202,16 +214,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": $int,
                   "bar": {
                     "str": "str",
-                    "bool": true
+                    "bool": true,
+                    "unit": { }
                    },
                   "buzzes": [
                     {
                       "int": $int,
-                      "bool": true
+                      "bool": true,
+                      "short": 4
                     },
                     {
                       "int": $int,
-                      "bool": false
+                      "bool": false,
+                      "short": 4
                     }
                   ],
                   "qux": {
@@ -227,16 +242,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             "int": $int,
             "bar": {
               "str": "str",
-              "bool": true
+              "bool": true,
+              "unit": { }
              },
             "buzzes": [
               {
                 "int": $int,
-                "bool": true
+                "bool": true,
+                "short": 4
               },
               {
                 "int": $int,
-                "bool": false
+                "bool": false,
+                "short": 4
               }
             ],
             "qux": {
@@ -261,16 +279,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "str": $str,
-                    "bool": true
+                    "bool": true,
+                    "unit": { }
                    },
                   "buzzes": [
                     {
                       "int": 42,
-                      "bool": true
+                      "bool": true,
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": false
+                      "bool": false,
+                      "short": 4
                     }
                   ],
                   "qux": {
@@ -286,16 +307,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
               "int": 42,
               "bar": {
                 "str": "$str",
-                "bool": true
+                "bool": true,
+                "unit": { }
                },
               "buzzes": [
                 {
                   "int": 42,
-                  "bool": true
+                  "bool": true,
+                  "short": 4
                 },
                 {
                   "int": 42,
-                  "bool": false
+                  "bool": false,
+                  "short": 4
                 }
               ],
               "qux": {
@@ -309,7 +333,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
 
     }
   }
-  
+
   test("empty inlined json object parsing") {
 
     val result =
@@ -318,16 +342,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 "int": 42,
                 "bar": {
                   "str": "str",
-                  "bool": true
+                  "bool": true,
+                  "unit": { }
                  },
                 "buzzes": [
                   {
                     "int": 42,
-                    "bool": true
+                    "bool": true,
+                    "short": 4
                   },
                   {
                     "int": 42,
-                    "bool": false
+                    "bool": false,
+                    "short": 4
                   }
                 ],
                 "qux": ${JsonObject.fromMap(Map.empty[String, Json])}
@@ -341,16 +368,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             "int": 42,
             "bar": {
               "str": "str",
-              "bool": true
+              "bool": true,
+              "unit": { }
              },
             "buzzes": [
               {
                 "int": 42,
-                "bool": true
+                "bool": true,
+                "short": 4
               },
               {
                 "int": 42,
-                "bool": false
+                "bool": false,
+                "short": 4
               }
             ],
             "qux": { }
@@ -372,16 +402,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "str": "str",
-                    "bool": true
+                    "bool": true,
+                    "unit": { }
                    },
                   "buzzes": [
                     {
                       "int": 42,
-                      "bool": true
+                      "bool": true,
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": false
+                      "bool": false,
+                      "short": 4
                     }
                   ],
                   "qux": $jsonObject
@@ -395,16 +428,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
               "int": 42,
               "bar": {
                 "str": "str",
-                "bool": true
+                "bool": true,
+                "unit": { }
                },
               "buzzes": [
                 {
                   "int": 42,
-                  "bool": true
+                  "bool": true,
+                  "short": 4
                 },
                 {
                   "int": 42,
-                  "bool": false
+                  "bool": false,
+                  "short": 4
                 }
               ],
               "qux": ${jsonObject.noSpaces}
@@ -426,16 +462,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "int": 42,
-                    "bool": true
+                    "bool": true,
+                    "unit": { }
                   },
                   "buzzes": [
                     {
                       "int": 42,
-                      "bool": true
+                      "bool": true,
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": false
+                      "bool": false,
+                      "short": 4
                     }
                   ],
                   "qux": "corrupted"
@@ -454,7 +493,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 "int": 42,
                 "bar": {
                   "str": "str",
-                  "bool": true
+                  "bool": true,
+                  "unit": { }
                  },
                 "buzzes": [],
                 "qux": { }
@@ -468,7 +508,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             "int": 42,
             "bar": {
               "str": "str",
-              "bool": true
+              "bool": true,
+              "unit": { }
              },
             "buzzes": [],
             "qux": { }
@@ -489,7 +530,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "str": "str",
-                    "bool": true
+                    "bool": true,
+                    "unit": { }
                    },
                   "buzzes": $buzzes,
                   "qux": { }
@@ -503,12 +545,14 @@ class EncodeSuite extends munit.ScalaCheckSuite:
               "int": 42,
               "bar": {
                 "str": "str",
-                "bool": true
+                "bool": true,
+                "unit": { }
                },
               "buzzes": [${buzzes map { buzz => 
                 s"""{
                   "int": ${buzz.int}, 
-                  "bool": ${buzz.bool} 
+                  "bool": ${buzz.bool} ,
+                  "short": ${buzz.short}
                 }""" } mkString ", "
               }],
               "qux": { }
@@ -531,16 +575,19 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "int": 42,
-                    "bool": true
+                    "bool": true,
+                    "unit": { }
                   },
                   "buzzes": [
                     {
                       "int": 42,
-                      "corrupted": "corrupted"
+                      "corrupted": "corrupted",
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": "corrupted"
+                      "bool": "corrupted",
+                      "short": 4
                     }
                   ],
                   "qux": { }
@@ -562,11 +609,13 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "buzzes": [
                     {
                       "int": 42,
-                      "bool": true
+                      "bool": true,
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": false
+                      "bool": false,
+                      "short": 4
                     }
                   ],
                   "qux": { }
@@ -581,11 +630,13 @@ class EncodeSuite extends munit.ScalaCheckSuite:
               "buzzes": [
                 {
                   "int": 42,
-                  "bool": true
+                  "bool": true,
+                  "short": 4
                 },
                 {
                   "int": 42,
-                  "bool": false
+                  "bool": false,
+                  "short": 4
                 }
               ],
               "qux": { }
@@ -610,11 +661,13 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "buzzes": [
                     {
                       "int": 42,
-                      "bool": true
+                      "bool": true,
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": false
+                      "bool": false,
+                      "short": 4
                     }
                   ],
                   "qux": { }
@@ -627,17 +680,20 @@ class EncodeSuite extends munit.ScalaCheckSuite:
           {
             "int": 42,
             "bar": {
-              "str": "${bar.str}",
-              "bool": ${bar.bool}
+              "str": ${bar.str},
+              "bool": ${bar.bool},
+              "unit": ${bar.unit}
             },
             "buzzes": [
               {
                 "int": 42,
-                "bool": true
+                "bool": true,
+                "short": 4
               },
               {
                 "int": 42,
-                "bool": false
+                "bool": false,
+                "short": 4
               }
             ],
             "qux": { }
@@ -662,11 +718,13 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "buzzes": [
                     {
                       "int": 42,
-                      "bool": true
+                      "bool": true,
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": false
+                      "bool": false,
+                      "short": 4
                     }
                   ],
                   "qux": { }
@@ -679,17 +737,20 @@ class EncodeSuite extends munit.ScalaCheckSuite:
           {
             "int": 42,
             "bar": {
-              "str": "${barLike.str}",
-              "bool": ${barLike.bool}
+              "str": ${barLike.str},
+              "bool": ${barLike.bool},
+              "unit": ${barLike.unit}
             },
             "buzzes": [
               {
                 "int": 42,
-                "bool": true
+                "bool": true,
+                "short": 4
               },
               {
                 "int": 42,
-                "bool": false
+                "bool": false,
+                "short": 4
               }
             ],
             "qux": { }
@@ -716,11 +777,13 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "buzzes": [
                     {
                       "int": 42,
-                      "bool": true
+                      "bool": true,
+                      "short": 4
                     },
                     {
                       "int": 42,
-                      "bool": false
+                      "bool": false,
+                      "short": 4
                     }
                   ],
                   "qux": { }
@@ -756,7 +819,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
               s"""
                {    
                   "int": ${buzz.int},
-                  "bool": ${buzz.bool}
+                  "bool": ${buzz.bool},
+                  "short": ${buzz.short}
                } 
                """} mkString ","
             }],
@@ -796,7 +860,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
               s"""
                {    
                   "int": ${buzz.int},
-                  "bool": ${buzz.bool}
+                  "bool": ${buzz.bool},
+                  "short": ${buzz.short}
                } 
                """} mkString ","
             }],
