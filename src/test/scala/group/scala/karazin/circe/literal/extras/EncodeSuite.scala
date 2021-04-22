@@ -192,6 +192,37 @@ class EncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
+  test("corrupted boolean value json object parsing compile error") {
+
+    compileErrors(
+      """
+        encode\"\"\"
+                {
+                  "int": 42,
+                  "bar": {
+                    "str": "str",
+                    "bool": "corrupted"
+                   },
+                  "buzzes": [
+                    {
+                      "int": 42,
+                      "bool": true
+                    },
+                    {
+                      "int": 42,
+                      "bool": false
+                    }
+                  ],
+                  "qux": {
+                    "str": "str"
+                  }
+                }
+        \"\"\"
+      """
+    )
+
+  }
+
   property("inlined int parsing") {
 
     forAll { (int: Int) =>
@@ -251,6 +282,38 @@ class EncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
+  test("corrupted int value json object parsing compile error") {
+
+    compileErrors(
+      """
+        encode\"\"\"
+                {
+                  "int": "corrupted",
+                  "bar": {
+                    "str": "str",
+                    "bool": true
+                   },
+                  "buzzes": [
+                    {
+                      "int": 42,
+                      "bool": true
+                    },
+                    {
+                      "int": 42,
+                      "bool": false
+                    }
+                  ],
+                  "qux": {
+                    "str": "str"
+                  }
+                }
+        \"\"\"
+      """
+    )
+
+  }
+
+
   property("inlined string parsing") {
 
     forAll { (str: String) =>
@@ -308,6 +371,37 @@ class EncodeSuite extends munit.ScalaCheckSuite:
       assertEquals(result, expected)
 
     }
+  }
+
+  test("corrupted string value json object parsing compile error") {
+
+    compileErrors(
+      """
+        encode\"\"\"
+                {
+                  "int": 42,
+                  "bar": {
+                    "str": false,
+                    "bool": true
+                   },
+                  "buzzes": [
+                    {
+                      "int": 42,
+                      "bool": true
+                    },
+                    {
+                      "int": 42,
+                      "bool": false
+                    }
+                  ],
+                  "qux": {
+                    "str": "str"
+                  }
+                }
+        \"\"\"
+      """
+    )
+
   }
   
   test("empty inlined json object parsing") {
@@ -417,7 +511,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
     }
   }
   
-  test("corrupted json object parsing compile error") {
+  test("corrupted json object value json object parsing compile error") {
 
     compileErrors(
       """
@@ -425,9 +519,9 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 {
                   "int": 42,
                   "bar": {
-                    "int": 42,
+                    "str": false,
                     "bool": true
-                  },
+                   },
                   "buzzes": [
                     {
                       "int": 42,
@@ -441,7 +535,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "qux": "corrupted"
                 }
         \"\"\"
-      """        
+      """
     )
 
   }
@@ -536,7 +630,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "buzzes": [
                     {
                       "int": 42,
-                      "corrupted": "corrupted"
+                      "bool": true
                     },
                     {
                       "int": 42,
