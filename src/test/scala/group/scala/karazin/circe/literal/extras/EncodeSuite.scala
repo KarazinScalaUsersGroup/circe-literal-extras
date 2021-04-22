@@ -35,8 +35,7 @@ object EncodeSuite:
     val genBarLike: Gen[BarLike] = for {
       str   <- Arbitrary.arbitrary[String]
       bool  <- Arbitrary.arbitrary[Boolean]
-      unit  = ()
-    } yield BarLike(str, bool, unit)
+    } yield BarLike(str, bool, ())
     
     val genBuzz: Gen[Buzz] = for {
       int   <- Arbitrary.arbitrary[Int]
@@ -656,7 +655,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
   property("inlined bar object parsing") {
 
     forAll { (bar: Bar) =>
-
+      
       val result =
         encode"""
                 {
@@ -684,9 +683,9 @@ class EncodeSuite extends munit.ScalaCheckSuite:
           {
             "int": 42,
             "bar": {
-              "str": ${bar.str},
+              "str": "${bar.str}",
               "bool": ${bar.bool},
-              "unit": ${bar.unit}
+              "unit": { }
             },
             "buzzes": [
               {
@@ -741,9 +740,9 @@ class EncodeSuite extends munit.ScalaCheckSuite:
           {
             "int": 42,
             "bar": {
-              "str": ${barLike.str},
+              "str": "${barLike.str}",
               "bool": ${barLike.bool},
-              "unit": ${barLike.unit}
+              "unit": { }
             },
             "buzzes": [
               {
@@ -815,9 +814,9 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             ${foo.bar.fold(""""bar": null,""") { bar =>
               s"""
                 "bar": {
-                  "str": ${bar.str},
+                  "str": "${bar.str}",
                   "bool": ${bar.bool},
-                  "unit": ${bar.unit}
+                  "unit": { }
                 }, 
               """ 
             }}
@@ -849,7 +848,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 $fooLike
                 """
 
-      val expected =  
+      val expected =
         parser.parse(  
           s"""
           {
@@ -857,9 +856,9 @@ class EncodeSuite extends munit.ScalaCheckSuite:
             ${fooLike.bar.fold(""""bar": null,""") { bar =>
               s"""
                 "bar": {
-                  "str": ${bar.str},
+                  "str": "${bar.str}",
                   "bool": ${bar.bool},
-                  "unit": ${bar.unit}
+                  "unit": { }
                 }, 
               """ 
             }}
