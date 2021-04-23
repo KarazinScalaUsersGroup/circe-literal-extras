@@ -7,7 +7,7 @@ import io.circe.{Json, JsonObject}
 import org.scalacheck._
 import org.scalacheck.Prop._
 
-import model.{given, _}
+import group.scala.karazin.circe.literal.extras.model.{given, _}
 
 object EncodeSuite:
 
@@ -57,7 +57,7 @@ object EncodeSuite:
     
     val genFooLike: Gen[FooLike] = for {
       int  <- Arbitrary.arbitrary[Int]
-      bar  <- Arbitrary.arbitrary[Option[Bar]]
+      bar  <- Arbitrary.arbitrary[Bar]
       buzz <- Arbitrary.arbitrary[List[Buzz]]
       qux  <- Arbitrary.arbitrary[JsonObject]
     } yield FooLike(int, bar, buzz, qux)
@@ -206,6 +206,40 @@ class EncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
+  test("corrupted boolean value json object parsing compile error") {
+
+    compileErrors(
+      """
+        encode\"\"\"
+                {
+                  "int": 42,
+                  "bar": {
+                    "str": "str",
+                    "bool": "corrupted",
+                    "unit": { }
+                   },
+                  "buzzes": [
+                    {
+                      "int": 42,
+                      "bool": true,
+                      "short": 4
+                    },
+                    {
+                      "int": 42,
+                      "bool": false,
+                      "short": 4
+                    }
+                  ],
+                  "qux": {
+                    "str": "str"
+                  }
+                }
+        \"\"\"
+      """
+    )
+
+  }
+
   property("inlined int parsing") {
 
     forAll { (int: Int) =>
@@ -271,6 +305,41 @@ class EncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
+  test("corrupted int value json object parsing compile error") {
+
+    compileErrors(
+      """
+        encode\"\"\"
+                {
+                  "int": "corrupted",
+                  "bar": {
+                    "str": "str",
+                    "bool": true,
+                    "unit": { }
+                   },
+                  "buzzes": [
+                    {
+                      "int": 42,
+                      "bool": true,
+                      "short": 4
+                    },
+                    {
+                      "int": 42,
+                      "bool": false,
+                      "short": 4
+                    }
+                  ],
+                  "qux": {
+                    "str": "str"
+                  }
+                }
+        \"\"\"
+      """
+    )
+
+  }
+
+
   property("inlined string parsing") {
 
     forAll { (str: String) =>
@@ -281,8 +350,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "str": $str,
-                    "bool": true,
-                    "unit": { }
+                    "bool": true
                    },
                   "buzzes": [
                     {
@@ -336,6 +404,40 @@ class EncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
+  test("corrupted string value json object parsing compile error") {
+
+    compileErrors(
+      """
+        encode\"\"\"
+                {
+                  "int": 42,
+                  "bar": {
+                    "str": false,
+                    "bool": true,
+                    "unit": { }
+                   },
+                  "buzzes": [
+                    {
+                      "int": 42,
+                      "bool": true,
+                      "short": 4
+                    },
+                    {
+                      "int": 42,
+                      "bool": false,
+                      "short": 4
+                    }
+                  ],
+                  "qux": {
+                    "str": "str"
+                  }
+                }
+        \"\"\"
+      """
+    )
+
+  }
+  
   test("empty inlined json object parsing") {
 
     val result =
@@ -455,7 +557,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
     }
   }
   
-  test("corrupted json object parsing compile error") {
+  test("corrupted json object value json object parsing compile error") {
 
     compileErrors(
       """
@@ -463,10 +565,10 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                 {
                   "int": 42,
                   "bar": {
-                    "int": 42,
+                    "str": false,
                     "bool": true,
                     "unit": { }
-                  },
+                   },
                   "buzzes": [
                     {
                       "int": 42,
@@ -482,7 +584,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "qux": "corrupted"
                 }
         \"\"\"
-      """        
+      """
     )
 
   }
@@ -583,7 +685,7 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "buzzes": [
                     {
                       "int": 42,
-                      "corrupted": "corrupted",
+                      "bool": true,
                       "short": 4
                     },
                     {
@@ -796,6 +898,52 @@ class EncodeSuite extends munit.ScalaCheckSuite:
     )
   }  
 
+  property("inlined int, bar, buzzes and qux into foo object parsing") {
+
+    forAll { (int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) =>
+
+      val result =
+        encode"""{
+                    "int": $int,
+                    "bar": $bar,
+                    "buzzes": $buzzes,
+                    "qux": $qux
+                 }
+                """
+
+      val expected =
+        parser.parse(
+          s"""
+          {
+            "int": $int,
+            ${bar.fold(""""bar": null,""") { bar =>
+              s"""
+                "bar": {
+                  "str": "${bar.str}",
+                  "bool": ${bar.bool},
+                  "unit": { }
+                },
+              """
+            }}
+            "buzzes": [${buzzes map { buzz =>
+              s"""
+               {
+                  "int": ${buzz.int},
+                  "bool": ${buzz.bool},
+                  "short": ${buzz.short}
+               }
+               """} mkString ","
+            }],
+            "qux": ${qux.noSpaces}
+          }
+          """
+        )
+
+      assertEquals(result, expected.toOption.get)
+
+    }
+  }
+
   property("inlined foo object parsing") {
 
     forAll { (foo: Foo) =>
@@ -852,16 +1000,12 @@ class EncodeSuite extends munit.ScalaCheckSuite:
           s"""
           {
             "int": ${fooLike.int},
-            ${fooLike.bar.fold(""""bar": null,""") { bar =>
-              s"""
-                "bar": {
-                  "str": "${bar.str}",
-                  "bool": ${bar.bool},
-                  "unit": { }
-                }, 
-              """ 
-            }}
-            "buzzes": [${fooLike.buzzes map { buzz => 
+            "bar": {
+              "str": "${fooLike.bar.str}",
+              "bool": ${fooLike.bar.bool},
+              "unit": { }
+            },
+            "buzzes": [${fooLike.buzzes map { buzz =>
               s"""
                {    
                   "int": ${buzz.int},

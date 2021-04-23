@@ -11,7 +11,7 @@ object model:
   case class Bar(str: String, bool: Boolean, unit: Unit) derives Codec.AsObject
   case class BarLike(str: String, bool: Boolean, unit: Unit) derives Codec.AsObject
   case class Foo(int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
-  case class FooLike(int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
+  case class FooLike(int: Int, bar: Bar, buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
 
   given tToJson[T: Encoder]: Conversion[T, Json] = summon[Encoder[T]](_)
   given optionToJson[T: Encoder]: Conversion[Option[T], Json] = summon[Encoder[Option[T]]](_)
