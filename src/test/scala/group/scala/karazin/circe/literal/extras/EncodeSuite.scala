@@ -350,7 +350,8 @@ class EncodeSuite extends munit.ScalaCheckSuite:
                   "int": 42,
                   "bar": {
                     "str": $str,
-                    "bool": true
+                    "bool": true,
+                    "unit": { }
                    },
                   "buzzes": [
                     {
