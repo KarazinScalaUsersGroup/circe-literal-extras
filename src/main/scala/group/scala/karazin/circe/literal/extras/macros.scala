@@ -215,8 +215,12 @@ object macros:
         case '[List[t]] =>
           cursor.focus match
             case Some(json) if json.isArray =>
-              cursor.downArray.success match
-                case Some(cursor) => validateJsonSchema[t](key, cursor)
+              cursor.values match
+                case Some(values) =>
+                  values foreach { value =>
+                    validateJsonSchema[t](key, value.hcursor)
+                  }
+
                 case None         => // intentionally blank   
               
             case Some(json) =>
