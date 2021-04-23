@@ -15,12 +15,20 @@ object macros:
     
     private val BooleanUnit = true
     private val StringUnit = ""
-
-    private val IntUnit = 0
-    private val ShortUnit = 0
-
-    private val JsonObjectUnit = JsonObject.empty
+    private val UUIDUnit = ""
+    private val CharUnit = ' '
+    private val IntUnit = 0.toInt
+    private val ShortUnit = 0.toShort
+    private val ByteUnit = 0.toByte
+    private val LongUnit = 0.toLong
+    private val BigIntUnit = new BigInt(java.math.BigInteger.valueOf(0))
+    private val BigDecimalUnit = new BigDecimal(java.math.BigDecimal.valueOf(0))
+    private val DoubleUnit = 0.0.toDouble
+    private val FloatUnit = 0.0.toFloat
     private val UnitUnit = JsonObject.empty
+    private val JsonObjectUnit = JsonObject.empty
+    private val JsonUnit = Json.Null
+    private val JsonNumberUnit = JsonNumber.fromString("0").get
     
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
@@ -153,12 +161,21 @@ object macros:
     
         case '[JsonObject] =>
           Json.fromJsonObject(JsonObjectUnit)
+
+        case '[Json] =>
+          JsonUnit
+
+        case '[JsonNumber] =>
+          Json.fromJsonNumber(JsonNumberUnit)
     
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])      
     
         case '[Boolean] => 
           Json.fromBoolean(BooleanUnit)
+
+        case '[Byte] | '[java.lang.Byte] =>
+          Json.fromInt(ByteUnit.toInt)
     
         case '[Int] =>
           Json.fromInt(IntUnit)
@@ -166,8 +183,17 @@ object macros:
         case '[String] =>
           Json.fromString(StringUnit)
 
-        case '[Short] =>
-          Json.fromInt(ShortUnit)
+        case '[Char] | '[java.lang.Character] =>
+          Json.fromString(CharUnit.toString)
+
+        case '[BigInt] | '[java.math.BigInteger] =>
+          Json.fromBigInt(BigIntUnit)
+
+        case '[BigDecimal] | '[java.math.BigDecimal] =>
+          Json.fromBigDecimal(BigDecimalUnit)
+
+        case '[java.util.UUID] =>
+          Json.fromString(UUIDUnit)
 
         case '[Unit] =>
           Json.fromJsonObject(UnitUnit)
@@ -258,6 +284,30 @@ object macros:
   
           case '[String] =>
             handleError(key, "String", cursor.as[String])
+
+          case '[Char] =>
+            handleError(key, "Char", cursor.as[Char])
+
+          case '[java.lang.Character] =>
+            handleError(key, "java.lang.Character", cursor.as[java.lang.Character])
+
+          case '[Byte] =>
+            handleError(key, "Byte", cursor.as[Byte])
+
+          case '[java.lang.Byte] =>
+            handleError(key, "java.lang.Byte", cursor.as[java.lang.Byte])
+
+          case '[BigInt] =>
+            handleError(key, "BigInt", cursor.as[BigInt])
+
+          case '[java.math.BigInteger] =>
+            handleError(key, "java.math.BigInteger", cursor.as[java.math.BigInteger])
+
+          case '[BigDecimal] =>
+            handleError(key, "BigDecimal", cursor.as[BigDecimal])
+
+          case '[java.math.BigDecimal] =>
+            handleError(key, "java.math.BigDecimal", cursor.as[java.math.BigDecimal])
     
           case '[JsonObject] => 
             handleError(key, "JsonObject", cursor.as[JsonObject])
