@@ -217,9 +217,8 @@ object macros:
             case Some(json) if json.isArray =>
               cursor.values match
                 case Some(values) =>
-                  values.foldLeft({}) { (unit, value) =>
+                  values foreach { value =>
                     validateJsonSchema[t](key, value.hcursor)
-                    unit
                   }
 
                 case None         => // intentionally blank   
