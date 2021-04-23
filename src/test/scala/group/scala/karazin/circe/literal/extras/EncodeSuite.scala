@@ -7,7 +7,7 @@ import io.circe.{Json, JsonObject}
 import org.scalacheck._
 import org.scalacheck.Prop._
 
-import model.{given, _}
+import group.scala.karazin.circe.literal.extras.model.{given, _}
 
 object EncodeSuite:
 
@@ -729,6 +729,50 @@ class EncodeSuite extends munit.ScalaCheckSuite:
       """
     )
   }  
+
+  property("inlined int, bar, buzzes and qux into foo object parsing") {
+
+    forAll { (int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) =>
+
+      val result =
+        encode"""{
+                    "int": $int,
+                    "bar": $bar,
+                    "buzzes": $buzzes,
+                    "qux": $qux
+                 }
+                """
+
+      val expected =
+        parser.parse(
+          s"""
+          {
+            "int": $int,
+            ${bar.fold(""""bar": null,""") { bar =>
+              s"""
+                "bar": {
+                  "str": "${bar.str}",
+                  "bool": ${bar.bool}
+                },
+              """
+            }}
+            "buzzes": [${buzzes map { buzz =>
+              s"""
+               {
+                  "int": ${buzz.int},
+                  "bool": ${buzz.bool}
+               }
+               """} mkString ","
+            }],
+            "qux": ${qux.noSpaces}
+          }
+          """
+        )
+
+      assertEquals(result, expected.toOption.get)
+
+    }
+  }
 
   property("inlined foo object parsing") {
 
