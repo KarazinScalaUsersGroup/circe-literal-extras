@@ -55,7 +55,7 @@ object EncodeSuite:
     
     val genFooLike: Gen[FooLike] = for {
       int  <- Arbitrary.arbitrary[Int]
-      bar  <- Arbitrary.arbitrary[Option[Bar]]
+      bar  <- Arbitrary.arbitrary[Bar]
       buzz <- Arbitrary.arbitrary[List[Buzz]]
       qux  <- Arbitrary.arbitrary[JsonObject]
     } yield FooLike(int, bar, buzz, qux)
@@ -922,15 +922,11 @@ class EncodeSuite extends munit.ScalaCheckSuite:
           s"""
           {
             "int": ${fooLike.int},
-            ${fooLike.bar.fold(""""bar": null,""") { bar =>
-              s"""
-                "bar": {
-                  "str": "${bar.str}",
-                  "bool": ${bar.bool}
-                }, 
-              """ 
-            }}
-            "buzzes": [${fooLike.buzzes map { buzz => 
+            "bar": {
+              "str": "${fooLike.bar.str}",
+              "bool": ${fooLike.bar.bool}
+            },
+            "buzzes": [${fooLike.buzzes map { buzz =>
               s"""
                {    
                   "int": ${buzz.int},
