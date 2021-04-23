@@ -145,7 +145,7 @@ object macros:
           Json.arr(deconstructArgument[t])
     
         case '[Option[t]] => 
-          deconstructArgument[T]
+          deconstructArgument[t]
     
         case '[JsonObject] =>
           Json.fromJsonObject(JsonObjectUnit)
