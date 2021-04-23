@@ -29,8 +29,7 @@ object EncodeSuite:
     val genBar: Gen[Bar] = for {
       str   <- Arbitrary.arbitrary[String]
       bool  <- Arbitrary.arbitrary[Boolean]
-      unit  <- Arbitrary.arbitrary[Unit]
-    } yield Bar(str, bool, unit)
+    } yield Bar(str, bool, ())
 
     val genBarLike: Gen[BarLike] = for {
       str   <- Arbitrary.arbitrary[String]

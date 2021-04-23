@@ -3,7 +3,7 @@ package group.scala.karazin.circe.literal.extras
 import cats.implicits.{given, _}
 import io.circe.parser
 import io.circe.syntax._
-import io.circe.{Json, JsonObject, Encoder, ACursor, HCursor}
+import io.circe.{Json, JsonObject, JsonNumber, Encoder, ACursor, HCursor}
 
 import scala.quoted._
 
@@ -12,7 +12,7 @@ import scala.deriving.Mirror
 object macros:
 
   object encode:
-    
+
     private val BooleanUnit = true
     private val StringUnit = ""
     private val UUIDUnit = ""
@@ -169,17 +169,29 @@ object macros:
           Json.fromJsonNumber(JsonNumberUnit)
     
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
-          Json.fromFields(deconstructArgumentProduct[t])      
+          Json.fromFields(deconstructArgumentProduct[t])    
     
-        case '[Boolean] => 
+        case '[Boolean] | '[java.lang.Boolean] =>
           Json.fromBoolean(BooleanUnit)
 
         case '[Byte] | '[java.lang.Byte] =>
           Json.fromInt(ByteUnit.toInt)
     
-        case '[Int] =>
+        case '[Int] | '[java.lang.Integer] =>
           Json.fromInt(IntUnit)
-    
+
+        case '[Short] | '[java.lang.Short] =>
+          Json.fromInt(ShortUnit.toInt)
+
+        case '[Float] | '[java.lang.Float] =>
+          Json.fromFloatOrNull(FloatUnit)
+
+        case '[Double] | '[java.lang.Double] =>
+          Json.fromDoubleOrNull(DoubleUnit)
+
+        case '[Long] | '[java.lang.Long] =>
+          Json.fromLong(LongUnit)
+
         case '[String] =>
           Json.fromString(StringUnit)
 
@@ -199,7 +211,11 @@ object macros:
           Json.fromJsonObject(UnitUnit)
       
         case '[tpe] =>
-          report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, Boolean, Int, String, Short, Unit but found `${Type.show[tpe]}`")
+          report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, " +
+            s"Boolean, java.lang.Boolean, Int, java.lang.Integer, String, Char, java.lang.Character, Short, " +
+            s"java.lang.Short, Byte, java.lang.Byte, Long, java.lang.Long, Float, java.lang.Float, Double, " +
+            s"java.lang.Double, BigInt, java.math.BigInteger, BigDecimal, java.math.BigDecimal, java.util.UUID" +
+            s"Unit but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
     
@@ -264,7 +280,18 @@ object macros:
         case '[Option[t]] => 
           validateJsonSchema[t](key, cursor)
     
-        case '[Boolean] | '[Int] | '[String] | '[JsonObject] | '[Short] | '[Unit]=>
+        case  '[Boolean] | '[java.lang.Boolean]       |
+              '[Long] | '[java.lang.Long]             |
+              '[Int]    | '[java.lang.Integer]        |
+              '[Short]  | '[java.lang.Short]          |
+              '[Byte]   | '[java.lang.Byte]           |
+              '[Double] | '[java.lang.Double]         |
+              '[Float]  | '[java.lang.Float]          |
+              '[Char]   | '[java.lang.Character]      |
+              '[BigInt] | '[java.math.BigInteger]     |
+              '[BigDecimal] | '[java.math.BigDecimal] |
+              '[JsonObject] | '[Json] | '[JsonNumber] |
+              '[String] | '[java.util.UUID] | '[Unit] =>
           validatePrimitives[T](key, cursor)
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
@@ -278,10 +305,40 @@ object macros:
         Type.of[T] match
           case '[Boolean] => 
             handleError(key, "Boolean", cursor.as[Boolean])
+
+          case '[java.lang.Boolean] =>
+            handleError(key, "java.lang.Boolean", cursor.as[java.lang.Boolean])
   
           case '[Int] =>
             handleError(key, "Int", cursor.as[Int])
-  
+
+          case '[java.lang.Integer] =>
+            handleError(key, "java.lang.Integer", cursor.as[java.lang.Integer])
+
+          case '[Short] =>
+            handleError(key, "Short", cursor.as[Short])
+
+          case '[java.lang.Short] =>
+            handleError(key, "java.lang.Short", cursor.as[java.lang.Short])
+
+          case '[Float] =>
+            handleError(key, "Float", cursor.as[Float])
+
+          case '[java.lang.Float] =>
+            handleError(key, "java.lang.Float", cursor.as[java.lang.Float])
+
+          case '[Double] =>
+            handleError(key, "Double", cursor.as[Double])
+
+          case '[java.lang.Double] =>
+            handleError(key, "java.lang.Double", cursor.as[java.lang.Double])
+
+          case '[Long] =>
+            handleError(key, "Long", cursor.as[Long])
+
+          case '[java.lang.Long] =>
+            handleError(key, "java.lang.Long", cursor.as[java.lang.Long])
+
           case '[String] =>
             handleError(key, "String", cursor.as[String])
 
@@ -312,8 +369,14 @@ object macros:
           case '[JsonObject] => 
             handleError(key, "JsonObject", cursor.as[JsonObject])
 
-          case '[Short] =>
-            handleError(key, "Short", cursor.as[Short])
+          case '[Json] =>
+            handleError(key, "Json", cursor.as[Json])
+
+          case '[JsonNumber] =>
+            handleError(key, "JsonNumber", cursor.as[JsonNumber])
+
+          case '[java.util.UUID] =>
+            handleError(key, "java.util.UUID", cursor.as[java.util.UUID])
 
           case '[Unit] =>
             handleError(key, "Unit", cursor.as[Unit])
