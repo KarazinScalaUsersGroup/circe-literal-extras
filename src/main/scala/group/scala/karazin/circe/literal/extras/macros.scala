@@ -1,6 +1,7 @@
 package group.scala.karazin.circe.literal.extras
 
 import cats.implicits.{given, _}
+import cats.data.{Chain, NonEmptyChain, NonEmptyList, NonEmptyMap, NonEmptySet, NonEmptyVector, OneAnd, Validated}
 import io.circe.parser
 import io.circe.syntax._
 import io.circe.{Json, JsonObject, Encoder, ACursor, HCursor}
@@ -143,6 +144,36 @@ object macros:
       Type.of[T] match
         case '[List[t]] =>
           Json.arr(deconstructArgument[t])
+
+        case '[Seq[t]] =>
+          Json.arr(deconstructArgument[t])
+
+        case '[Set[t]] =>
+          Json.arr(deconstructArgument[t])
+
+        case '[Vector[t]] =>
+          Json.arr(deconstructArgument[t])
+
+        case '[Map[String, t]] =>
+          Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
+
+        case '[NonEmptyList[t]] =>
+          Json.arr(deconstructArgument[t])
+    
+        case '[NonEmptyVector[t]] =>
+          Json.arr(deconstructArgument[t])
+
+        case '[NonEmptySet[t]] =>
+          Json.arr(deconstructArgument[t])
+
+        case '[NonEmptyMap[String, t]] =>
+          Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
+
+        case '[Chain[t]] =>
+          Json.arr(deconstructArgument[t])
+    
+        case '[NonEmptyChain[t]] =>
+          Json.arr(deconstructArgument[t])
     
         case '[Option[t]] => 
           deconstructArgument[t]
@@ -163,7 +194,10 @@ object macros:
           Json.fromString(StringUnit)
       
         case '[tpe] =>
-          report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, Boolean, Int, String but found `${Type.show[tpe]}`")
+          report.throwError(s"Macros implementation error. Unsupported type. Required List, Seq, Vector, Map[String, _], " +
+            s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.NonEmptySet, cats.data.NonEmptyMap, " +
+            s"cats.data.Chain, cats.data.NonEmptyChain, Option, Some, None, Set, Product, " +
+            s"Boolean, Int, String but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
     
@@ -211,23 +245,86 @@ object macros:
     def validateJsonSchema[T: Type](key: String, cursor: HCursor)(using Quotes): Unit =
       import quotes.reflect._
       
-      Type.of[T] match
-        case '[List[t]] =>
-          cursor.focus match
-            case Some(json) if json.isArray =>
-              cursor.values match
-                case Some(values) =>
-                  values foreach { value =>
-                    validateJsonSchema[t](key, value.hcursor)
-                  }
+      def validateJsonArray(key: String, cursor: HCursor)(f: Json => Any) = 
+        cursor.focus match
+          case Some(json) if json.isArray =>
+            cursor.values match
+              case Some(values) => values map f
+              case None         => // intentionally blank
+          case Some(json) => report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
+          case None => report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
 
-                case None         => // intentionally blank   
-              
-            case Some(json) =>
-              report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
-              
-            case None => 
-              report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
+      def validateJsonObject(key: String, cursor: HCursor)(f: String => Any) =
+        cursor.focus match
+          case Some(json) if json.isObject =>
+            cursor.keys match
+              case Some(keys) => keys foreach f
+              case None         => // intentionally blank
+          case Some(json) => report.throwError(s"""Unexpected json type by key `$key`. Json object is expected""")
+          case None => report.throwError(s"""Unexpected json type by key `$key`. Json object is expected""")
+      
+
+      Type.of[T] match
+        case '[List[t]] => 
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
+
+        case '[Seq[t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
+
+        case '[Set[t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
+    
+        case '[Vector[t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
+
+        case '[Chain[t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
+
+        case '[Map[String, t]] =>
+          validateJsonObject(key, cursor) {
+            key => 
+              cursor.downField(key).success match
+                case Some(cursor) => validateJsonSchema[t](key, cursor)
+                case None         => // Impossible case
+        }
+
+        case '[NonEmptyList[t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
+
+        case '[NonEmptyVector[t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
+
+        case '[NonEmptySet[t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
+
+        case '[NonEmptyMap[String, t]] =>
+          validateJsonObject(key, cursor) {
+            key =>
+              cursor.downField(key).success match
+                case Some(cursor) => validateJsonSchema[t](key, cursor)
+                case None => // Impossible case
+          }
+    
+        case '[NonEmptyChain[t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
           
         case '[Option[t]] => 
           validateJsonSchema[t](key, cursor)
