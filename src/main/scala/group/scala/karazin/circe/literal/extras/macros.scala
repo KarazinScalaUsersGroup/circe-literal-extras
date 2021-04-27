@@ -154,7 +154,7 @@ object macros:
         case '[Vector[t]] =>
           Json.arr(deconstructArgument[t])
 
-        case '[Map[String, t]] =>
+        case '[Map[f, t]] if deconstructArgument[f].isString =>
           Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
 
         case '[NonEmptyList[t]] =>
@@ -166,7 +166,7 @@ object macros:
         case '[NonEmptySet[t]] =>
           Json.arr(deconstructArgument[t])
 
-        case '[NonEmptyMap[String, t]] =>
+        case '[NonEmptyMap[f, t]] if deconstructArgument[f].isString =>
           Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
 
         case '[Chain[t]] =>
@@ -174,6 +174,14 @@ object macros:
     
         case '[NonEmptyChain[t]] =>
           Json.arr(deconstructArgument[t])
+
+        // TODO think about it
+        case '[OneAnd[_, t]] =>
+          Json.arr(deconstructArgument[t])
+
+        // TODO think about it
+        case '[Either[f, t]] =>
+          Json.fromFields((StringUnit, deconstructArgument[f]) :: (StringUnit, deconstructArgument[t]):: Nil)
     
         case '[Option[t]] => 
           deconstructArgument[t]
@@ -194,9 +202,9 @@ object macros:
           Json.fromString(StringUnit)
       
         case '[tpe] =>
-          report.throwError(s"Macros implementation error. Unsupported type. Required List, Seq, Vector, Map[String, _], " +
+          report.throwError(s"Macros implementation error. Unsupported type. Required List, Seq, Vector, Map, " +
             s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.NonEmptySet, cats.data.NonEmptyMap, " +
-            s"cats.data.Chain, cats.data.NonEmptyChain, Option, Some, None, Set, Product, " +
+            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.OneAnd, Option, Some, None, Set, Product, " +
             s"Boolean, Int, String but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
@@ -228,7 +236,9 @@ object macros:
           (deconstructProductFieldNames[elems] zip deconstructProductFieldTypes[tpes]) foreach {
             case (key, '[Option[tpe]]) =>
               cursor.downField(key).success match
-                case Some(cursor) => validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
+                case Some(cursor) =>
+                  if (!cursor.value.isNull)
+                    validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
                 case None         => // intentionally blank
 
             case (key, '[tpe]) =>
@@ -290,7 +300,7 @@ object macros:
             value => validateJsonSchema[t](key, value.hcursor)
           }
 
-        case '[Map[String, t]] =>
+        case '[Map[f, t]] =>
           validateJsonObject(key, cursor) {
             key => 
               cursor.downField(key).success match
@@ -313,7 +323,7 @@ object macros:
             value => validateJsonSchema[t](key, value.hcursor)
           }
 
-        case '[NonEmptyMap[String, t]] =>
+        case '[NonEmptyMap[f, t]] =>
           validateJsonObject(key, cursor) {
             key =>
               cursor.downField(key).success match
@@ -325,8 +335,14 @@ object macros:
           validateJsonArray(key, cursor) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
+
+        // TODO think about it
+        case '[OneAnd[_, t]] =>
+          validateJsonArray(key, cursor) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
           
-        case '[Option[t]] => 
+        case '[Option[t]] =>
           validateJsonSchema[t](key, cursor)
     
         case '[Boolean] | '[Int] | '[String] | '[JsonObject] => 
@@ -353,11 +369,11 @@ object macros:
           case '[JsonObject] => 
             handleError(key, "JsonObject", cursor.as[JsonObject])
         
-        def handleError(key: String, promitiveType: String, result: Either[Throwable, _]): Unit = 
+        def handleError(key: String, primitiveType: String, result: Either[Throwable, _]): Unit = 
           
           result match
             case Right(_)     => // intentionally blank
-            case Left(error)  => report.throwError(s"The json does not sitisfied to the schema: cannot treat `$key` field as `$promitiveType`. Underline error: `$error`")
+            case Left(error)  => report.throwError(s"The json does not sitisfied to the schema: cannot treat `$key` field as `$primitiveType`. Underline error: `$error`")
         
         end handleError
     
