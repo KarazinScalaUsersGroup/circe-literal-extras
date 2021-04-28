@@ -192,6 +192,9 @@ object macros:
     
         case '[JsonObject] =>
           Json.fromJsonObject(JsonObjectUnit)
+
+        case '[Iterable[t]] =>
+          Json.arr(deconstructArgument[t])
     
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])      
@@ -208,7 +211,7 @@ object macros:
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required List, Seq, Vector, Map, " +
             s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.NonEmptySet, cats.data.NonEmptyMap, " +
-            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.OneAnd, Option, Some, None, Set, Product, " +
+            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.OneAnd, Option, Some, None, Set, Iterable, Product, " +
             s"Boolean, Int, String but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
@@ -334,12 +337,21 @@ object macros:
           validateJsonArray(key, cursor, true) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
-
-        // TODO what about container
+    
+        // TODO not implemented
+        case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] => ???
+    
+        // TODO what about container?
         case '[OneAnd[_, t]] =>
           validateJsonArray(key, cursor) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
+
+        // TODO not implemented
+        case '[Either[f, t]] => ???
+
+        // TODO not implemented
+        case '[Validated[f, t]] => ???
 
         case '[Some[t]] =>
           validateJsonSchema[t](key, cursor)
@@ -351,6 +363,11 @@ object macros:
         case '[Option[t]] =>
           if (!cursor.value.isNull)
             validateJsonSchema[t](key, cursor)
+
+        case '[Iterable[t]] =>
+          validateJsonArray(key, cursor, true) {
+            value => validateJsonSchema[t](key, value.hcursor)
+          }
     
         case '[Boolean] | '[Int] | '[String] | '[JsonObject] => 
           validatePrimitives[T](key, cursor)
