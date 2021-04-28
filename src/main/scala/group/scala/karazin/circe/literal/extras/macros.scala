@@ -174,14 +174,18 @@ object macros:
     
         case '[NonEmptyChain[t]] =>
           Json.arr(deconstructArgument[t])
-
-        // TODO think about it
+    
         case '[OneAnd[_, t]] =>
           Json.arr(deconstructArgument[t])
-
-        // TODO think about it
+    
         case '[Either[f, t]] =>
-          Json.fromFields((StringUnit, deconstructArgument[f]) :: (StringUnit, deconstructArgument[t]):: Nil)
+          Json.fromFields((StringUnit, deconstructArgument[f]) :: Nil)
+
+        case '[Some[t]] =>
+          deconstructArgument[t]
+
+        case '[None.type] =>
+          Json.Null
     
         case '[Option[t]] => 
           deconstructArgument[t]
@@ -234,6 +238,16 @@ object macros:
             ) =>
 
           (deconstructProductFieldNames[elems] zip deconstructProductFieldTypes[tpes]) foreach {
+            case (key, '[Some[tpe]]) =>
+              cursor.downField(key).success match
+                case Some(cursor) => validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
+                case None         => report.throwError(s"""Missing required key `${s"$keyPrefix.$key"}`""")
+
+            case (key, '[None.type]) =>
+              cursor.downField(key).success match
+                case Some(cursor) => report.throwError(s"""Unexpected json type by key `$key`. Null is expected""")
+                case None         => // intentionally blank
+
             case (key, '[Option[tpe]]) =>
               cursor.downField(key).success match
                 case Some(cursor) =>
@@ -255,25 +269,6 @@ object macros:
     def validateJsonSchema[T: Type](key: String, cursor: HCursor)(using Quotes): Unit =
       import quotes.reflect._
       
-      def validateJsonArray(key: String, cursor: HCursor)(f: Json => Any) = 
-        cursor.focus match
-          case Some(json) if json.isArray =>
-            cursor.values match
-              case Some(values) => values map f
-              case None         => // intentionally blank
-          case Some(json) => report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
-          case None => report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
-
-      def validateJsonObject(key: String, cursor: HCursor)(f: String => Any) =
-        cursor.focus match
-          case Some(json) if json.isObject =>
-            cursor.keys match
-              case Some(keys) => keys foreach f
-              case None         => // intentionally blank
-          case Some(json) => report.throwError(s"""Unexpected json type by key `$key`. Json object is expected""")
-          case None => report.throwError(s"""Unexpected json type by key `$key`. Json object is expected""")
-      
-
       Type.of[T] match
         case '[List[t]] => 
           validateJsonArray(key, cursor) {
@@ -284,7 +279,8 @@ object macros:
           validateJsonArray(key, cursor) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
-
+    
+        // TODO validate that all values are different
         case '[Set[t]] =>
           validateJsonArray(key, cursor) {
             value => validateJsonSchema[t](key, value.hcursor)
@@ -300,6 +296,7 @@ object macros:
             value => validateJsonSchema[t](key, value.hcursor)
           }
 
+        // TODO validate that all keys are different
         case '[Map[f, t]] =>
           validateJsonObject(key, cursor) {
             key => 
@@ -309,22 +306,24 @@ object macros:
         }
 
         case '[NonEmptyList[t]] =>
-          validateJsonArray(key, cursor) {
+          validateJsonArray(key, cursor, true) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
 
         case '[NonEmptyVector[t]] =>
-          validateJsonArray(key, cursor) {
+          validateJsonArray(key, cursor, true) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
 
+        // TODO validate that all values are different
         case '[NonEmptySet[t]] =>
-          validateJsonArray(key, cursor) {
+          validateJsonArray(key, cursor, true) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
 
+        // TODO validate that all keys are different
         case '[NonEmptyMap[f, t]] =>
-          validateJsonObject(key, cursor) {
+          validateJsonObject(key, cursor, true) {
             key =>
               cursor.downField(key).success match
                 case Some(cursor) => validateJsonSchema[t](key, cursor)
@@ -332,18 +331,26 @@ object macros:
           }
     
         case '[NonEmptyChain[t]] =>
-          validateJsonArray(key, cursor) {
+          validateJsonArray(key, cursor, true) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
 
-        // TODO think about it
+        // TODO what about container
         case '[OneAnd[_, t]] =>
           validateJsonArray(key, cursor) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
-          
-        case '[Option[t]] =>
+
+        case '[Some[t]] =>
           validateJsonSchema[t](key, cursor)
+
+        case '[None.type] =>
+          if (!cursor.value.isNull)
+            report.throwError(s"""Unexpected json type by key `$key`. Null is expected""")
+    
+        case '[Option[t]] =>
+          if (!cursor.value.isNull)
+            validateJsonSchema[t](key, cursor)
     
         case '[Boolean] | '[Int] | '[String] | '[JsonObject] => 
           validatePrimitives[T](key, cursor)
@@ -353,6 +360,32 @@ object macros:
 
         case '[unexpected] =>
           report.throwError(s"Macros implementation error. Unsupported type `${Type.show[unexpected]}`")
+
+      def validateJsonArray(key: String, cursor: HCursor, nonEmpty: Boolean = false)(f: Json => Any) =
+        cursor.focus match
+          case Some(json) if json.isArray =>
+            cursor.values match
+              case Some(values) => 
+                if (values.isEmpty && nonEmpty)
+                  report.throwError(s"""Unexpected json type by key `$key`. Non-empty json array is expected""")
+                else 
+                  values map f
+              case None         => // intentionally blank
+          case Some(json) => report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
+          case None => report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
+  
+      def validateJsonObject(key: String, cursor: HCursor, nonEmpty: Boolean = false)(f: String => Any) =
+        cursor.focus match
+          case Some(json) if json.isObject =>
+            cursor.keys match
+              case Some(keys) =>
+                if (keys.isEmpty && nonEmpty)
+                  report.throwError(s"""Unexpected json type by key `$key`. Non-empty json object is expected""")
+                else
+                  keys map f
+              case None       => // intentionally blank
+          case Some(json) => report.throwError(s"""Unexpected json type by key `$key`. Json object is expected""")
+          case None => report.throwError(s"""Unexpected json type by key `$key`. Json object is expected""")
     
       def validatePrimitives[T: Type](key: String, cursor: ACursor)(using Quotes): Unit = 
         
