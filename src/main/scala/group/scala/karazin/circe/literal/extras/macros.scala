@@ -283,9 +283,8 @@ object macros:
             value => validateJsonSchema[t](key, value.hcursor)
           }
     
-        // TODO validate that all values are different
         case '[Set[t]] =>
-          validateJsonArray(key, cursor) {
+          validateJsonArray(key, cursor, false, true) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
     
@@ -298,8 +297,7 @@ object macros:
           validateJsonArray(key, cursor) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
-
-        // TODO validate that all keys are different
+    
         case '[Map[f, t]] =>
           validateJsonObject(key, cursor) {
             key => 
@@ -317,14 +315,12 @@ object macros:
           validateJsonArray(key, cursor, true) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
-
-        // TODO validate that all values are different
+    
         case '[NonEmptySet[t]] =>
-          validateJsonArray(key, cursor, true) {
+          validateJsonArray(key, cursor, true, true) {
             value => validateJsonSchema[t](key, value.hcursor)
           }
-
-        // TODO validate that all keys are different
+    
         case '[NonEmptyMap[f, t]] =>
           validateJsonObject(key, cursor, true) {
             key =>
@@ -378,14 +374,17 @@ object macros:
         case '[unexpected] =>
           report.throwError(s"Macros implementation error. Unsupported type `${Type.show[unexpected]}`")
 
-      def validateJsonArray(key: String, cursor: HCursor, nonEmpty: Boolean = false)(f: Json => Any) =
+      def validateJsonArray(key: String, cursor: HCursor, 
+                            nonEmpty: Boolean = false, differentValues: Boolean = false)(f: Json => Any) =
         cursor.focus match
           case Some(json) if json.isArray =>
             cursor.values match
               case Some(values) => 
-                if (values.isEmpty && nonEmpty)
+                if (nonEmpty && values.isEmpty)
                   report.throwError(s"""Unexpected json type by key `$key`. Non-empty json array is expected""")
-                else 
+                else if (differentValues && values.toSet.size == values.size)
+                  report.throwError(s"""Unexpected json type by key `$key`. Json array expected with different values""")
+                else
                   values map f
               case None         => // intentionally blank
           case Some(json) => report.throwError(s"""Unexpected json type by key `$key`. Json array is expected""")
@@ -396,8 +395,10 @@ object macros:
           case Some(json) if json.isObject =>
             cursor.keys match
               case Some(keys) =>
-                if (keys.isEmpty && nonEmpty)
+                if (nonEmpty && keys.isEmpty)
                   report.throwError(s"""Unexpected json type by key `$key`. Non-empty json object is expected""")
+                else if (keys.toSet.size == keys.size)
+                  report.throwError(s"""Unexpected json type by key `$key`. Json object expected with different keys""")
                 else
                   keys map f
               case None       => // intentionally blank
