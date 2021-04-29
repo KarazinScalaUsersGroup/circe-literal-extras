@@ -177,8 +177,11 @@ object macros:
     
         case '[NonEmptyChain[t]] =>
           Json.arr(deconstructArgument[t])
+
+        case '[Validated[t, f]] =>
+          Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
     
-        case '[Either[f, t]] =>
+        case '[Either[t, f]] =>
           Json.fromFields((StringUnit, deconstructArgument[f]) :: Nil)
 
         case '[Some[t]] =>
@@ -215,9 +218,9 @@ object macros:
           Json.fromString(StringUnit)
       
         case '[tpe] =>
-          report.throwError(s"Macros implementation error. Unsupported type. Required List, Seq, Vector, Map, " +
+          report.throwError(s"Macros implementation error. Unsupported type. Required List, Seq, Vector, Map, Set, Iterable, " +
             s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.NonEmptySet, cats.data.NonEmptyMap, " +
-            s"cats.data.Chain, cats.data.NonEmptyChain, Option, Some, None, Set, Iterable, Product, " +
+            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.Validated, Either, Option, Some, None, Product, " +
             s"Boolean, Int, String but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
