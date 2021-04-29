@@ -29,8 +29,26 @@ object macros:
     private val JsonObjectUnit = JsonObject.empty
     private val JsonUnit = Json.Null
     private val JsonNumberUnit = JsonNumber.fromString("0").get
-    
-    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
+
+    private val DurationUnit = java.time.Duration.ZERO
+    private val InstantUnit = java.time.Instant.MIN //
+    private val PeriodUnit = java.time.Period.ZERO
+    private val ZoneIdUnit = java.time.ZoneId.of("+0")
+    private val LocalDateUnit = java.time.LocalDate.MIN  //
+    private val LocalTimeUnit = java.time.LocalTime.MIN  //
+    private val LocalDateTimeUnit = java.time.LocalDateTime.MIN //
+    private val MonthDayUnit = java.time.MonthDay.of(1,1)
+    private val OffsetTimeUnit = java.time.OffsetTime.MIN //
+    private val OffsetDateTimeUnit = java.time.OffsetDateTime.MIN //
+    private val YearUnit = java.time.Year.of(0)
+    private val YearMonthUnit = java.time.YearMonth.of(0,1)
+    private val ZonedDateTimeUnit = java.time.ZonedDateTime.now()
+    private val ZoneOffsetUnit = java.time.ZoneOffset.MIN //
+
+    private val CurrencyUnit = java.util.Currency.getInstance("")
+
+
+      def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
 
       import quotes.reflect._
@@ -209,12 +227,62 @@ object macros:
 
         case '[Unit] =>
           Json.fromJsonObject(UnitUnit)
+
+        case '[java.time.Duration] =>
+          Json.fromString(DurationUnit.toString)
+
+        case '[java.time.Instant] =>
+          Json.fromString(InstantUnit.toString)
+
+        case '[java.time.Period] =>
+          Json.fromString(PeriodUnit.toString)
+
+        case '[java.time.ZoneId] =>
+          Json.fromString(ZoneIdUnit.getId)
+
+        case '[java.time.LocalDate] =>
+          Json.fromString(LocalDateUnit.toString)
+
+        case '[java.time.LocalTime] =>
+          Json.fromString(LocalTimeUnit.toString)
+
+        case '[java.time.LocalDateTime] =>
+          Json.fromString(LocalDateTimeUnit.toString)
+
+        case '[java.time.MonthDay] =>
+          Json.fromString(MonthDayUnit.toString)
+
+        case '[java.time.OffsetTime] =>
+          Json.fromString(OffsetTimeUnit.toString)
+
+        case '[java.time.OffsetDateTime] =>
+          Json.fromString(OffsetDateTimeUnit.toString)
+
+        case '[java.time.Year] =>
+          Json.fromString(YearUnit.toString)
+
+        case '[java.time.YearMonth] =>
+          Json.fromString(YearMonthUnit.toString)
+
+        case '[java.time.ZonedDateTime] =>
+          Json.fromString(ZonedDateTimeUnit.toString)
+
+        case '[java.time.ZoneOffset] =>
+          Json.fromString(ZoneOffsetUnit.toString)
+
+        case '[java.util.Currency] =>
+          Json.fromString(CurrencyUnit.toString)
+
       
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, " +
             s"Boolean, java.lang.Boolean, Int, java.lang.Integer, String, Char, java.lang.Character, Short, " +
             s"java.lang.Short, Byte, java.lang.Byte, Long, java.lang.Long, Float, java.lang.Float, Double, " +
-            s"java.lang.Double, BigInt, java.math.BigInteger, BigDecimal, java.math.BigDecimal, java.util.UUID" +
+            s"java.lang.Double, BigInt, java.math.BigInteger, BigDecimal, java.math.BigDecimal, java.util.UUID, " +
+            s"java.time.Duration, java.time.Instant, java.time.Period, java.time.ZoneId, java.time.LocalDate, " +
+            s"java.time.LocalTime, java.time.LocalDateTime, java.time.MonthDay, java.time.OffsetTime, " +
+            s"java.time.OffsetDateTime,java.time.Year, java.time.YearMonth, java.time.ZonedDateTime," +
+            s"java.time.ZoneOffset, java.util.Currency " +
             s"Unit but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
@@ -295,7 +363,14 @@ object macros:
               '[BigInt] | '[java.math.BigInteger]     |
               '[BigDecimal] | '[java.math.BigDecimal] |
               '[JsonObject] | '[Json] | '[JsonNumber] |
-              '[String] | '[java.util.UUID] | '[Unit] =>
+              '[String] | '[java.util.UUID] | '[Unit] |
+              '[java.time.Duration] | '[java.time.Instant] |
+              '[java.time.Period] | '[java.time.ZoneId] |
+              '[java.time.LocalDate] | '[java.time.LocalTime] |
+              '[java.time.LocalDateTime] | '[java.time.MonthDay] |
+              '[java.time.OffsetTime] | '[java.time.OffsetDateTime] |
+              '[java.time.Year] | '[java.time.YearMonth] |
+              '[java.time.ZonedDateTime] | '[java.time.ZoneOffset] | '[java.util.Currency] =>
           validatePrimitives[T](key, cursor)
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
@@ -384,6 +459,51 @@ object macros:
 
           case '[Unit] =>
             handleError(key, "Unit", cursor.as[Unit])
+
+          case '[java.time.Duration] =>
+            handleError(key, "java.time.Duration", cursor.as[java.time.Duration])
+
+          case '[java.time.Instant] =>
+            handleError(key, "java.time.Instant", cursor.as[java.time.Instant])
+
+          case '[java.time.Period] =>
+            handleError(key, "java.time.Period", cursor.as[java.time.Period])
+
+          case '[java.time.ZoneId] =>
+            handleError(key, "java.time.ZoneId", cursor.as[java.time.ZoneId])
+
+          case '[java.time.LocalDate] =>
+            handleError(key, "java.time.LocalDate", cursor.as[java.time.LocalDate])
+
+          case '[java.time.LocalTime] =>
+            handleError(key, "java.time.LocalTime", cursor.as[java.time.LocalTime])
+
+          case '[java.time.LocalDateTime] =>
+            handleError(key, "java.time.LocalDateTime", cursor.as[java.time.LocalDateTime])
+
+          case '[java.time.MonthDay] =>
+            handleError(key, "java.time.MonthDay", cursor.as[java.time.MonthDay])
+
+          case '[java.time.OffsetTime] =>
+            handleError(key, "java.time.OffsetTime", cursor.as[java.time.OffsetTime])
+
+          case '[java.time.OffsetDateTime] =>
+            handleError(key, "java.time.OffsetDateTime", cursor.as[java.time.OffsetDateTime])
+
+          case '[java.time.Year] =>
+            handleError(key, "java.time.Year", cursor.as[java.time.Year])
+
+          case '[java.time.YearMonth] =>
+            handleError(key, "java.time.YearMonth", cursor.as[java.time.YearMonth])
+
+          case '[java.time.ZonedDateTime] =>
+            handleError(key, "java.time.ZonedDateTime", cursor.as[java.time.ZonedDateTime])
+
+          case '[java.time.ZoneOffset] =>
+            handleError(key, "java.time.ZoneOffset", cursor.as[java.time.ZoneOffset])
+
+          case '[java.util.Currency] =>
+            handleError(key, "java.util.Currency", cursor.as[java.util.Currency])
         
         def handleError(key: String, promitiveType: String, result: Either[Throwable, _]): Unit = 
           
