@@ -352,12 +352,18 @@ object macros:
     
         case '[OneAnd[_, _]] =>
           Left(s"Macros does not yet support this type cats.data.OneAnd")
-
-        // TODO not implemented
-        case '[Either[f, t]] => ???
-
-        // TODO not implemented
-        case '[Validated[f, t]] => ???
+    
+        case '[Either[t, f]] => 
+          validateJsonSchema[t](key, cursor) match {
+            case error: Left[String, _] => error
+            case _                      => validateJsonSchema[f](key, cursor)
+          }
+    
+        case '[Validated[t, f]] =>
+          validateJsonSchema[t](key, cursor) match {
+            case error: Left[String, _] => error
+            case _                      => validateJsonSchema[f](key, cursor)
+        }
 
         case '[Some[t]] =>
           validateJsonSchema[t](key, cursor)
