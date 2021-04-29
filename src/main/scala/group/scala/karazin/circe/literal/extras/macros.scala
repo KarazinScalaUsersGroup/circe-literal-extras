@@ -175,9 +175,6 @@ object macros:
         case '[NonEmptyChain[t]] =>
           Json.arr(deconstructArgument[t])
     
-        case '[OneAnd[_, t]] =>
-          Json.arr(deconstructArgument[t])
-    
         case '[Either[f, t]] =>
           Json.fromFields((StringUnit, deconstructArgument[f]) :: Nil)
 
@@ -195,6 +192,12 @@ object macros:
 
         case '[Iterable[t]] =>
           Json.arr(deconstructArgument[t])
+
+        case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
+          report.throwError(s"Macros does not yet support this type `${Type.show[tpe]}`")
+    
+        case '[OneAnd[_, _]] =>
+          report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
     
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])      
@@ -211,7 +214,7 @@ object macros:
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required List, Seq, Vector, Map, " +
             s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.NonEmptySet, cats.data.NonEmptyMap, " +
-            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.OneAnd, Option, Some, None, Set, Iterable, Product, " +
+            s"cats.data.Chain, cats.data.NonEmptyChain, Option, Some, None, Set, Iterable, Product, " +
             s"Boolean, Int, String but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
@@ -334,14 +337,11 @@ object macros:
             value => validateJsonSchema[t](key, value.hcursor)
           }
     
-        // TODO not implemented
-        case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] => ???
+        case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
+          report.throwError(s"Macros does not yet support this type `${Type.show[tpe]}`")
     
-        // TODO what about container?
-        case '[OneAnd[_, t]] =>
-          validateJsonArray(key, cursor) {
-            value => validateJsonSchema[t](key, value.hcursor)
-          }
+        case '[OneAnd[_, _]] =>
+          report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
 
         // TODO not implemented
         case '[Either[f, t]] => ???
