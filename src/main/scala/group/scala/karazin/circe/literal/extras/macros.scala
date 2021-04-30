@@ -16,10 +16,11 @@ object macros:
     private val UnitUnit = JsonObject.empty
     private val BooleanUnit = true
 
-    private val ByteUnit: Byte = 0
-    private val ShortUnit: Short = 0
-    private val IntUnit: Int = 0
-    private val LongUnit: Long = 0
+//    private val ByteUnit: Byte = 0
+//    private val ShortUnit: Short = 0
+//    private val IntUnit: Int = 0
+//    private val LongUnit: Long = 0
+    private val SimpleIntUnit = 0
 
     private val DoubleUnit: Double = 0
     private val FloatUnit: Float = 0
@@ -202,17 +203,21 @@ object macros:
         case '[Boolean] | '[java.lang.Boolean] =>
           Json.fromBoolean(BooleanUnit)
 
-        case '[Byte] | '[java.lang.Byte] =>
-          Json.fromInt(ByteUnit.toInt)
+        case '[Byte] | '[java.lang.Byte] | '[Short] | '[java.lang.Short] |
+             '[Int] | '[java.lang.Integer] |'[Long] | '[java.lang.Long]  =>
+          Json.fromInt(SimpleIntUnit.toInt)
 
-        case '[Short] | '[java.lang.Short] =>
-          Json.fromInt(ShortUnit.toInt)
+//        case '[Byte] | '[java.lang.Byte] =>
+//          Json.fromInt(BooleanUnit.toInt)
 
-        case '[Int] | '[java.lang.Integer] =>
-          Json.fromInt(IntUnit)
+//        case '[Short] | '[java.lang.Short] =>
+//          Json.fromInt(ShortUnit.toInt)
 
-        case '[Long] | '[java.lang.Long] =>
-          Json.fromLong(LongUnit)
+//        case '[Int] | '[java.lang.Integer] =>
+//          Json.fromInt(IntUnit)
+
+//        case '[Long] | '[java.lang.Long] =>
+//          Json.fromLong(LongUnit)
 
         case '[Float] | '[java.lang.Float] =>
           Json.fromFloatOrNull(FloatUnit)
