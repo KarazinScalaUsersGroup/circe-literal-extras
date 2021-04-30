@@ -13,19 +13,26 @@ object macros:
 
   object encode:
 
-    private val BooleanUnit = true
-    private val StringUnit = ""
-    private val UUIDUnit = ""
-    private val CharUnit = ' '
-    private val IntUnit = 0.toInt
-    private val ShortUnit = 0.toShort
-    private val ByteUnit = 0.toByte
-    private val LongUnit = 0.toLong
-    private val BigIntUnit = new BigInt(java.math.BigInteger.valueOf(0))
-    private val BigDecimalUnit = new BigDecimal(java.math.BigDecimal.valueOf(0))
-    private val DoubleUnit = 0.0.toDouble
-    private val FloatUnit = 0.0.toFloat
     private val UnitUnit = JsonObject.empty
+    private val BooleanUnit = true
+
+    private val ByteUnit: Byte = 0
+    private val ShortUnit: Short = 0
+    private val IntUnit: Int = 0
+    private val LongUnit: Long = 0
+
+    private val DoubleUnit: Double = 0
+    private val FloatUnit: Float = 0
+
+    private val CharUnit = ' '
+    private val StringUnit = ""
+
+    private val BigIntUnit: BigInt = BigInt(0)
+
+    private val BigDecimalUnit: BigDecimal = BigDecimal(0)
+
+    private val UUIDUnit = ""
+
     private val JsonObjectUnit = JsonObject.empty
     private val JsonUnit = Json.Null
     private val JsonNumberUnit = JsonNumber.fromString("0").get
@@ -176,39 +183,42 @@ object macros:
     
         case '[Option[t]] => 
           deconstructArgument[t]
-    
-        case '[JsonObject] =>
-          Json.fromJsonObject(JsonObjectUnit)
 
         case '[Json] =>
           JsonUnit
+
+        case '[JsonObject] =>
+          Json.fromJsonObject(JsonObjectUnit)
 
         case '[JsonNumber] =>
           Json.fromJsonNumber(JsonNumberUnit)
     
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
-          Json.fromFields(deconstructArgumentProduct[t])    
+          Json.fromFields(deconstructArgumentProduct[t])
+
+        case '[Unit] =>
+          Json.fromJsonObject(UnitUnit)
     
         case '[Boolean] | '[java.lang.Boolean] =>
           Json.fromBoolean(BooleanUnit)
 
         case '[Byte] | '[java.lang.Byte] =>
           Json.fromInt(ByteUnit.toInt)
-    
-        case '[Int] | '[java.lang.Integer] =>
-          Json.fromInt(IntUnit)
 
         case '[Short] | '[java.lang.Short] =>
           Json.fromInt(ShortUnit.toInt)
+
+        case '[Int] | '[java.lang.Integer] =>
+          Json.fromInt(IntUnit)
+
+        case '[Long] | '[java.lang.Long] =>
+          Json.fromLong(LongUnit)
 
         case '[Float] | '[java.lang.Float] =>
           Json.fromFloatOrNull(FloatUnit)
 
         case '[Double] | '[java.lang.Double] =>
           Json.fromDoubleOrNull(DoubleUnit)
-
-        case '[Long] | '[java.lang.Long] =>
-          Json.fromLong(LongUnit)
 
         case '[String] =>
           Json.fromString(StringUnit)
@@ -224,9 +234,6 @@ object macros:
 
         case '[java.util.UUID] =>
           Json.fromString(UUIDUnit)
-
-        case '[Unit] =>
-          Json.fromJsonObject(UnitUnit)
 
         case '[java.time.Duration] =>
           Json.fromString(DurationUnit.toString)
@@ -276,14 +283,13 @@ object macros:
       
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, " +
-            s"Boolean, java.lang.Boolean, Int, java.lang.Integer, String, Char, java.lang.Character, Short, " +
+            s"Unit, Boolean, java.lang.Boolean, Int, java.lang.Integer, Short, " +
             s"java.lang.Short, Byte, java.lang.Byte, Long, java.lang.Long, Float, java.lang.Float, Double, " +
-            s"java.lang.Double, BigInt, java.math.BigInteger, BigDecimal, java.math.BigDecimal, java.util.UUID, " +
-            s"java.time.Duration, java.time.Instant, java.time.Period, java.time.ZoneId, java.time.LocalDate, " +
-            s"java.time.LocalTime, java.time.LocalDateTime, java.time.MonthDay, java.time.OffsetTime, " +
-            s"java.time.OffsetDateTime,java.time.Year, java.time.YearMonth, java.time.ZonedDateTime," +
-            s"java.time.ZoneOffset, java.util.Currency " +
-            s"Unit but found `${Type.show[tpe]}`")
+            s"java.lang.Double, String, Char, java.lang.Character, BigInt, java.math.BigInteger, BigDecimal, " +
+            s"java.math.BigDecimal, java.util.UUID, java.time.Duration, java.time.Instant, java.time.Period, " +
+            s"java.time.ZoneId, java.time.LocalDate, java.time.LocalTime, java.time.LocalDateTime, java.time.MonthDay," +
+            s"java.time.OffsetTime, java.time.OffsetDateTime,java.time.Year, java.time.YearMonth, java.time.ZonedDateTime," +
+            s"java.time.ZoneOffset, java.util.Currency but found `${Type.show[tpe]}`")
       
     end deconstructArgument     
     
@@ -352,25 +358,14 @@ object macros:
         case '[Option[t]] => 
           validateJsonSchema[t](key, cursor)
     
-        case  '[Boolean] | '[java.lang.Boolean]       |
-              '[Long] | '[java.lang.Long]             |
-              '[Int]    | '[java.lang.Integer]        |
-              '[Short]  | '[java.lang.Short]          |
-              '[Byte]   | '[java.lang.Byte]           |
-              '[Double] | '[java.lang.Double]         |
-              '[Float]  | '[java.lang.Float]          |
-              '[Char]   | '[java.lang.Character]      |
-              '[BigInt] | '[java.math.BigInteger]     |
-              '[BigDecimal] | '[java.math.BigDecimal] |
-              '[JsonObject] | '[Json] | '[JsonNumber] |
-              '[String] | '[java.util.UUID] | '[Unit] |
-              '[java.time.Duration] | '[java.time.Instant] |
-              '[java.time.Period] | '[java.time.ZoneId] |
-              '[java.time.LocalDate] | '[java.time.LocalTime] |
-              '[java.time.LocalDateTime] | '[java.time.MonthDay] |
-              '[java.time.OffsetTime] | '[java.time.OffsetDateTime] |
-              '[java.time.Year] | '[java.time.YearMonth] |
-              '[java.time.ZonedDateTime] | '[java.time.ZoneOffset] | '[java.util.Currency] =>
+        case  '[Unit] | '[Boolean] | '[java.lang.Boolean] | '[Byte] | '[java.lang.Byte] | '[Short]  | '[java.lang.Short] |
+              '[Int] | '[java.lang.Integer] | '[Long] | '[java.lang.Long] | '[Float]  | '[java.lang.Float] |
+              '[Double] | '[java.lang.Double] | '[Char] | '[java.lang.Character] | '[String] | '[BigInt] |
+              '[java.math.BigInteger] | '[BigDecimal] | '[java.math.BigDecimal] | '[JsonNumber] | '[JsonObject] |
+              '[Json] | '[java.util.UUID] | '[java.time.Duration] | '[java.time.Instant] | '[java.time.Period] |
+              '[java.time.ZoneId] | '[java.time.LocalDate] | '[java.time.LocalTime] | '[java.time.LocalDateTime] |
+              '[java.time.MonthDay] | '[java.time.OffsetTime] | '[java.time.OffsetDateTime] | '[java.time.Year] |
+              '[java.time.YearMonth] | '[java.time.ZonedDateTime] | '[java.time.ZoneOffset] | '[java.util.Currency] =>
           validatePrimitives[T](key, cursor)
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
@@ -382,7 +377,10 @@ object macros:
       def validatePrimitives[T: Type](key: String, cursor: ACursor)(using Quotes): Unit = 
         
         Type.of[T] match
-          case '[Boolean] => 
+          case '[Unit] =>
+            handleError(key, "Unit", cursor.as[Unit])
+
+          case '[Boolean] =>
             handleError(key, "Boolean", cursor.as[Boolean])
 
           case '[java.lang.Boolean] =>
@@ -400,6 +398,18 @@ object macros:
           case '[java.lang.Short] =>
             handleError(key, "java.lang.Short", cursor.as[java.lang.Short])
 
+          case '[Long] =>
+            handleError(key, "Long", cursor.as[Long])
+
+          case '[java.lang.Long] =>
+            handleError(key, "java.lang.Long", cursor.as[java.lang.Long])
+
+          case '[Byte] =>
+            handleError(key, "Byte", cursor.as[Byte])
+
+          case '[java.lang.Byte] =>
+            handleError(key, "java.lang.Byte", cursor.as[java.lang.Byte])
+
           case '[Float] =>
             handleError(key, "Float", cursor.as[Float])
 
@@ -412,12 +422,6 @@ object macros:
           case '[java.lang.Double] =>
             handleError(key, "java.lang.Double", cursor.as[java.lang.Double])
 
-          case '[Long] =>
-            handleError(key, "Long", cursor.as[Long])
-
-          case '[java.lang.Long] =>
-            handleError(key, "java.lang.Long", cursor.as[java.lang.Long])
-
           case '[String] =>
             handleError(key, "String", cursor.as[String])
 
@@ -426,12 +430,6 @@ object macros:
 
           case '[java.lang.Character] =>
             handleError(key, "java.lang.Character", cursor.as[java.lang.Character])
-
-          case '[Byte] =>
-            handleError(key, "Byte", cursor.as[Byte])
-
-          case '[java.lang.Byte] =>
-            handleError(key, "java.lang.Byte", cursor.as[java.lang.Byte])
 
           case '[BigInt] =>
             handleError(key, "BigInt", cursor.as[BigInt])
@@ -444,21 +442,18 @@ object macros:
 
           case '[java.math.BigDecimal] =>
             handleError(key, "java.math.BigDecimal", cursor.as[java.math.BigDecimal])
-    
-          case '[JsonObject] => 
-            handleError(key, "JsonObject", cursor.as[JsonObject])
 
           case '[Json] =>
             handleError(key, "Json", cursor.as[Json])
+
+          case '[JsonObject] =>
+            handleError(key, "JsonObject", cursor.as[JsonObject])
 
           case '[JsonNumber] =>
             handleError(key, "JsonNumber", cursor.as[JsonNumber])
 
           case '[java.util.UUID] =>
             handleError(key, "java.util.UUID", cursor.as[java.util.UUID])
-
-          case '[Unit] =>
-            handleError(key, "Unit", cursor.as[Unit])
 
           case '[java.time.Duration] =>
             handleError(key, "java.time.Duration", cursor.as[java.time.Duration])
