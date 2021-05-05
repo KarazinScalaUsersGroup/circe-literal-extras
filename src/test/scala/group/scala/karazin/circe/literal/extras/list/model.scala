@@ -8,19 +8,27 @@ import io.circe.{Codec, Encoder, Json, JsonObject}
 import org.scalacheck._
 
 object model:
-  case class Foo(ints: List[Int], options: List[Option[Boolean]]) derives Codec.AsObject
-  case class FooLike(ints: List[Int], options: List[Boolean]) derives Codec.AsObject
+  case class Bar(str: String) derives Codec.AsObject
+  case class Foo(ints: List[Int], options: List[Option[Boolean]], bars: List[Bar]) derives Codec.AsObject
+  case class FooLike(ints: List[Int], options: List[Boolean], bars: List[Bar]) derives Codec.AsObject
+
+  val genBar: Gen[Bar] = for {
+    str   <- Arbitrary.arbitrary[String]
+  } yield Bar(str)
   
   val genFoo: Gen[Foo] = for {
     ints     <- Arbitrary.arbitrary[List[Int]]
     options  <- Arbitrary.arbitrary[List[Option[Boolean]]]
-  } yield Foo(ints, options)
+    bars     <- Arbitrary.arbitrary[List[Bar]]
+  } yield Foo(ints, options, bars)
 
   val genFooLike: Gen[FooLike] = for {
     ints     <- Arbitrary.arbitrary[List[Int]]
     options  <- Arbitrary.arbitrary[List[Boolean]]
-  } yield FooLike(ints, options)
-  
+    bars     <- Arbitrary.arbitrary[List[Bar]]
+  } yield FooLike(ints, options, bars)
+
+  given Arbitrary[Bar] = Arbitrary(genBar)
   given Arbitrary[Foo] = Arbitrary(genFoo)
   given Arbitrary[FooLike] = Arbitrary(genFooLike)
 

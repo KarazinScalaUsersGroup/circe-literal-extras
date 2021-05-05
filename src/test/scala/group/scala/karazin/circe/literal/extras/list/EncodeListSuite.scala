@@ -22,7 +22,8 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
       encode"""
               {
                 "ints": [ ],
-                "options": [ null, true ]
+                "options": [ null, true ],
+                "bars": [ ]
               }
               """
 
@@ -31,13 +32,45 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
           s"""
           {
             "ints": [ ],
-            "options": [ null, true ]
+            "options": [ null, true ],
+            "bars": [ ]
           }
           """
         ).toOption.get                
 
       assertEquals(result, expected)
 
+  }
+
+  property("inlined ints, options, bars into foo object parsing") {
+
+    forAll { (ints: List[Int], options: List[Option[Boolean]], bars: List[Bar]) =>
+
+      val result =
+        encode"""{
+                    "ints": $ints,
+                    "options": $options,
+                    "bars": $bars
+                 }
+                """
+
+      val expected =
+        parser.parse(
+          s"""
+              {
+                "ints": [ ${ints map(_.toString) mkString ", "} ],
+                "options": [ ${options.map(v => v.fold("null")(_.toString)) mkString ", "} ],
+                "bars": [ ${bars map {
+            bar => s"""{ "str": "${bar.str}" }"""
+          } mkString ", "
+          }]
+              }
+              """
+        ).toOption.get
+
+      assertEquals(result, expected)
+
+    }
   }
 
   property("inlined foo object parsing") {
@@ -54,7 +87,11 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
           s"""
               {
                 "ints": [ ${foo.ints map(_.toString) mkString ", "} ],
-                "options": [ ${foo.options.map(v => v.fold("null")(_.toString)) mkString ", "} ]
+                "options": [ ${foo.options.map(v => v.fold("null")(_.toString)) mkString ", "} ],
+                "bars": [ ${foo.bars map {
+                    bar => s"""{ "str": "${bar.str}" }"""
+                  } mkString ", "
+                }]
               }
               """
         ).toOption.get
@@ -77,7 +114,11 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
           s"""
               {
                 "ints": [ ${fooLike.ints map(_.toString) mkString ", "} ],
-                "options": [ ${fooLike.options.map(_.toString) mkString ", "} ]
+                "options": [ ${fooLike.options.map(_.toString) mkString ", "} ],
+                "bars": [ ${fooLike.bars map {
+                    bar => s""" { "str": "${bar.str}" } """
+                  } mkString ", "
+                }]
               }
               """
         ).toOption.get
@@ -87,13 +128,13 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
   }
 
   test("corrupted ints parsing compile error") {
-
     compileErrors(
       """
         encode\"\"\"
                 {
                   "ints": [ -1, "" ],
-                  "options": [ ]
+                  "options": [ ],
+                  "bars": [ ]
                 }
         \"\"\"
       """
@@ -101,15 +142,29 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
   }
 
   test("corrupted options parsing compile error") {
-
     compileErrors(
       """
         encode\"\"\"
                 {
                   "ints": [ ],
-                  "options": [ null, 42 ]
+                  "options": [ null, 42 ],
+                  "bars": [ ]
                 }
         \"\"\"
       """
     )
-  }  
+  }
+
+  test("corrupted bars parsing compile error") {
+    compileErrors(
+      """
+        encode\"\"\"
+                {
+                  "ints": [ -1 ],
+                  "options": [ null ],
+                  "bars": [ null ]
+                }
+        \"\"\"
+      """
+    )
+  }
