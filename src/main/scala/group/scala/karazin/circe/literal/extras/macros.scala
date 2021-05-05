@@ -16,10 +16,6 @@ object macros:
     private val UnitUnit = JsonObject.empty
     private val BooleanUnit = true
 
-//    private val ByteUnit: Byte = 0
-//    private val ShortUnit: Short = 0
-//    private val IntUnit: Int = 0
-//    private val LongUnit: Long = 0
     private val SimpleIntUnit = 0
 
     private val DoubleUnit: Double = 0
@@ -39,21 +35,21 @@ object macros:
     private val JsonNumberUnit = JsonNumber.fromString("0").get
 
     private val DurationUnit = java.time.Duration.ZERO
-    private val InstantUnit = java.time.Instant.MIN //
+    private val InstantUnit = java.time.Instant.MIN
     private val PeriodUnit = java.time.Period.ZERO
     private val ZoneIdUnit = java.time.ZoneId.of("+0")
-    private val LocalDateUnit = java.time.LocalDate.MIN  //
-    private val LocalTimeUnit = java.time.LocalTime.MIN  //
-    private val LocalDateTimeUnit = java.time.LocalDateTime.MIN //
+    private val LocalDateUnit = java.time.LocalDate.MIN
+    private val LocalTimeUnit = java.time.LocalTime.MIN
+    private val LocalDateTimeUnit = java.time.LocalDateTime.MIN
     private val MonthDayUnit = java.time.MonthDay.of(1,1)
-    private val OffsetTimeUnit = java.time.OffsetTime.MIN //
-    private val OffsetDateTimeUnit = java.time.OffsetDateTime.MIN //
+    private val OffsetTimeUnit = java.time.OffsetTime.MIN
+    private val OffsetDateTimeUnit = java.time.OffsetDateTime.MIN
     private val YearUnit = java.time.Year.of(0)
     private val YearMonthUnit = java.time.YearMonth.of(0,1)
     private val ZonedDateTimeUnit = java.time.ZonedDateTime.now()
-    private val ZoneOffsetUnit = java.time.ZoneOffset.MIN //
+    private val ZoneOffsetUnit = java.time.ZoneOffset.MIN
 
-    private val CurrencyUnit = java.util.Currency.getInstance("")
+    private val CurrencyUnit = java.util.Currency.getInstance("USD")
 
 
       def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
@@ -179,21 +175,6 @@ object macros:
       import quotes.reflect._
       
       Type.of[T] match
-        case '[List[t]] =>
-          Json.arr(deconstructArgument[t])
-    
-        case '[Option[t]] => 
-          deconstructArgument[t]
-
-        case '[Json] =>
-          JsonUnit
-
-        case '[JsonObject] =>
-          Json.fromJsonObject(JsonObjectUnit)
-
-        case '[JsonNumber] =>
-          Json.fromJsonNumber(JsonNumberUnit)
-    
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])
 
@@ -206,18 +187,6 @@ object macros:
         case '[Byte] | '[java.lang.Byte] | '[Short] | '[java.lang.Short] |
              '[Int] | '[java.lang.Integer] |'[Long] | '[java.lang.Long]  =>
           Json.fromInt(SimpleIntUnit.toInt)
-
-//        case '[Byte] | '[java.lang.Byte] =>
-//          Json.fromInt(BooleanUnit.toInt)
-
-//        case '[Short] | '[java.lang.Short] =>
-//          Json.fromInt(ShortUnit.toInt)
-
-//        case '[Int] | '[java.lang.Integer] =>
-//          Json.fromInt(IntUnit)
-
-//        case '[Long] | '[java.lang.Long] =>
-//          Json.fromLong(LongUnit)
 
         case '[Float] | '[java.lang.Float] =>
           Json.fromFloatOrNull(FloatUnit)
@@ -285,18 +254,32 @@ object macros:
         case '[java.util.Currency] =>
           Json.fromString(CurrencyUnit.toString)
 
+        case '[Json] =>
+          JsonUnit
+
+        case '[JsonObject] =>
+          Json.fromJsonObject(JsonObjectUnit)
+
+        case '[JsonNumber] =>
+          Json.fromJsonNumber(JsonNumberUnit)
+
+        case '[List[t]] =>
+          Json.arr(deconstructArgument[t])
+
+        case '[Option[t]] =>
+          deconstructArgument[t]
       
         case '[tpe] =>
-          report.throwError(s"Macros implementation error. Unsupported type. Required List, Option, Product, " +
-            s"Unit, Boolean, java.lang.Boolean, Int, java.lang.Integer, Short, " +
-            s"java.lang.Short, Byte, java.lang.Byte, Long, java.lang.Long, Float, java.lang.Float, Double, " +
+          report.throwError(s"Macros implementation error. Unsupported type. Required " +
+            s"Unit, Boolean, java.lang.Boolean, Byte, java.lang.Byte,  Short, " +
+            s"java.lang.Short, Int, java.lang.Integer, Long, java.lang.Long, Float, java.lang.Float, Double, " +
             s"java.lang.Double, String, Char, java.lang.Character, BigInt, java.math.BigInteger, BigDecimal, " +
             s"java.math.BigDecimal, java.util.UUID, java.time.Duration, java.time.Instant, java.time.Period, " +
             s"java.time.ZoneId, java.time.LocalDate, java.time.LocalTime, java.time.LocalDateTime, java.time.MonthDay," +
             s"java.time.OffsetTime, java.time.OffsetDateTime,java.time.Year, java.time.YearMonth, java.time.ZonedDateTime," +
-            s"java.time.ZoneOffset, java.util.Currency but found `${Type.show[tpe]}`")
-      
-    end deconstructArgument     
+            s"java.time.ZoneOffset, java.util.Currency, List, Option, Product but found `${Type.show[tpe]}`")
+
+    end deconstructArgument
     
     def deconstructArguments(argExprs: Seq[Expr[Any]])(using quotes: Quotes): List[Json] =
       
