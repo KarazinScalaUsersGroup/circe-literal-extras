@@ -262,11 +262,9 @@ object macros:
 
             case (key, '[Option[tpe]]) =>
               cursor.downField(key).success match
-                case Some(cursor) =>
-                  if (!cursor.value.isNull) 
-                    validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
-                  else Right(None)
-                case None => Right(None)
+                case Some(cursor) if !cursor.value.isNull => 
+                  validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
+                case _ => Right(None)
 
             case (key, '[tpe]) =>
               cursor.downField(key).success match
@@ -401,19 +399,18 @@ object macros:
       cursor.focus match
         case Some(json) if json.isArray =>
           cursor.values match
+            case Some(values) if nonEmpty && values.isEmpty =>
+              Left(s"""Unexpected json type by key `$key`. Non-empty json array is expected""")
+            case Some(values) if differentValues && values.toSet.size == values.size =>
+              Left(s"""Unexpected json type by key `$key`. Json array expected with different values""")
             case Some(values) =>
-              if (nonEmpty && values.isEmpty)
-                Left(s"""Unexpected json type by key `$key`. Non-empty json array is expected""")
-              else if (differentValues && values.toSet.size == values.size)
-                Left(s"""Unexpected json type by key `$key`. Json array expected with different values""")
-              else
-                values map f withFilter {
-                  case l: Left[String, _] => true
-                  case _                  => false
-                } map (a => a) headOption match {
-                  case Some(e) => e
-                  case None    => Right(None)
-                }
+              values map f withFilter {
+                case l: Left[String, _] => true
+                case _                  => false
+              } map (a => a) headOption match {
+                case Some(e) => e
+                case None    => Right(None)
+              }
             case None => Right(None)
         case Some(json) => Left(s"""Unexpected json type by key `$key`. Json array is expected""")
         case None       => Left(s"""Unexpected json type by key `$key`. Json array is expected""")
@@ -426,19 +423,18 @@ object macros:
       cursor.focus match
         case Some(json) if json.isObject =>
           cursor.keys match
+            case Some(keys) if nonEmpty && keys.isEmpty =>
+              Left(s"""Unexpected json type by key `$key`. Non-empty json object is expected""")
+            case Some(keys) if keys.toSet.size == keys.size =>
+              Left(s"""Unexpected json type by key `$key`. Json object expected with different keys""")
             case Some(keys) =>
-              if (nonEmpty && keys.isEmpty)
-                Left(s"""Unexpected json type by key `$key`. Non-empty json object is expected""")
-              else if (keys.toSet.size == keys.size)
-                Left(s"""Unexpected json type by key `$key`. Json object expected with different keys""")
-              else
-                keys map f withFilter {
-                  case l: Left[String, _] => true
-                  case _                  => false
-                } map(a => a) headOption match {
-                  case Some(e) => e
-                  case None    => Right(None)
-                }
+              keys map f withFilter {
+                case l: Left[String, _] => true
+                case _                  => false
+              } map(a => a) headOption match {
+                case Some(e) => e
+                case None    => Right(None)
+              }
             case None => Right(None)
         case Some(json) => Left(s"""Unexpected json type by key `$key`. Json object is expected""")
         case None       => Left(s"""Unexpected json type by key `$key`. Json object is expected""")
