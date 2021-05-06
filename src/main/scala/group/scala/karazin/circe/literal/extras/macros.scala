@@ -1,14 +1,14 @@
 package group.scala.karazin.circe.literal.extras
 
-import cats.implicits.{given, _}
+import cats.implicits._
 import cats.data.{Chain, NonEmptyChain, NonEmptyList, NonEmptyMap, NonEmptySet, NonEmptyVector, OneAnd, Validated}
 import io.circe.parser
 import io.circe.syntax._
-import io.circe.{Json, JsonObject, Encoder, ACursor, HCursor}
+import io.circe.{ACursor, Encoder, HCursor, Json, JsonObject}
 
 import scala.quoted._
-
 import scala.deriving.Mirror
+import scala.util.{Failure, Success, Try as UTry}
 
 object macros:
 
@@ -28,9 +28,9 @@ object macros:
         case Varargs(argExprs) =>
           
           val jsonSchema = makeJsonSchema(getStringContextParts(sc), deconstructArguments(argExprs))
-          validateJsonSchema("*", jsonSchema.hcursor) match {
-            case l: Left[String, _] => report.throwError(l.value)
-            case _                  => // intentionally blank
+          UTry(validateJsonSchema("*", jsonSchema.hcursor)) match {
+            case Success(_)   => // intentionally blank
+            case Failure(exc) => report.throwError(s"`${exc.getMessage}`")
           }
           makeJson(sc, argExprs)
 
@@ -200,10 +200,10 @@ object macros:
           Json.arr(deconstructArgument[t])
 
         case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
-          report.throwError(s"Macros does not yet support this type `${Type.show[tpe]}`")
+          throw Exception(s"Macros does not yet support this type `${Type.show[tpe]}`")
     
         case '[OneAnd[_, _]] =>
-          report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
+          throw Exception(s"Macros does not yet support this type cats.data.OneAnd")
     
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])      
@@ -233,7 +233,7 @@ object macros:
       
     end deconstructArguments
       
-    def deconstructTypeSchemaProduct[T: Type](keyPrefix: String, cursor: ACursor)(using Quotes): Either[String, None.type] =
+    def deconstructTypeSchemaProduct[T: Type](keyPrefix: String, cursor: ACursor)(using Quotes): Unit =
       import quotes.reflect._
 
       val mirrorTpe = Type.of[Mirror.Of[T]]
@@ -253,133 +253,125 @@ object macros:
             case (key, '[Some[tpe]]) =>
               cursor.downField(key).success match
                 case Some(cursor) => validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
-                case None         => Left(s"""Missing required key `${s"$keyPrefix.$key"}`""")
+                case None         => throw Exception(s"""Missing required key `${s"$keyPrefix.$key"}`""")
 
             case (key, '[None.type]) =>
               cursor.downField(key).success match
-                case Some(cursor) => Left(s"""Unexpected json type by key `$key`. Null is expected""")
-                case None         => Right(None)
+                case Some(cursor) => throw Exception(s"""Unexpected json type by key `$key`. Null is expected""")
+                case None         => // intentionally blank
 
             case (key, '[Option[tpe]]) =>
               cursor.downField(key).success match
-                case Some(cursor) if !cursor.value.isNull => 
+                case Some(cursor) if !cursor.value.isNull =>
                   validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
-                case _ => Right(None)
+                case _ => // intentionally blank
 
             case (key, '[tpe]) =>
               cursor.downField(key).success match
                 case Some(cursor) => validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
-                case None         => Left(s"""Missing required key `${s"$keyPrefix.$key"}`""")
-          } withFilter {
-            case l: Left[String, _] => true
-            case _                  => false
-          } map (a => a) headOption match {
-            case Some(e) => e
-            case None    => Right(None)
+                case None         => throw Exception(s"""Missing required key `${s"$keyPrefix.$key"}`""")
           }
     
         case expr =>
-          Left(s"Macros implementation error. Unexpected expression. Required Some(Mirror.ProductOf[T]) but found `$expr`")
+          throw Exception(s"Macros implementation error. Unexpected expression. Required Some(Mirror.ProductOf[T]) but found `$expr`")
 
     end deconstructTypeSchemaProduct
     
-    def validateJsonSchema[T: Type](key: String, cursor: HCursor)(using Quotes): Either[String, None.type] =
+    def validateJsonSchema[T: Type](key: String, cursor: HCursor)(using Quotes): Unit =
       import quotes.reflect._
       
       Type.of[T] match
         case '[List[t]] => 
-          validateJsonArray(key, cursor) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor) { value => 
+            validateJsonSchema[t](key, value.hcursor)
           }
 
         case '[Seq[t]] =>
-          validateJsonArray(key, cursor) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor) { value =>
+            validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[Set[t]] =>
-          validateJsonArray(key, cursor, false, true) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor, false, true) { value =>
+            validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[Vector[t]] =>
-          validateJsonArray(key, cursor) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor) { value =>
+            validateJsonSchema[t](key, value.hcursor)
           }
 
         case '[Chain[t]] =>
-          validateJsonArray(key, cursor) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor) { value =>
+            validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[Map[f, t]] =>
-          validateJsonObject(key, cursor) {
-            key => 
-              cursor.downField(key).success match
-                case Some(cursor) => validateJsonSchema[t](key, cursor)
-                case None         => Right(None)
+          validateJsonObject(key, cursor) { key => 
+            cursor.downField(key).success match
+              case Some(cursor) => validateJsonSchema[t](key, cursor)
+              case None         => // intentionally blank
         }
 
         case '[NonEmptyList[t]] =>
-          validateJsonArray(key, cursor, true) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor, true) { value => 
+            validateJsonSchema[t](key, value.hcursor)
           }
 
         case '[NonEmptyVector[t]] =>
-          validateJsonArray(key, cursor, true) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor, true) { value =>
+            validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[NonEmptySet[t]] =>
-          validateJsonArray(key, cursor, true, true) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor, true, true) { value =>
+            validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[NonEmptyMap[f, t]] =>
-          validateJsonObject(key, cursor, true) {
-            key =>
-              cursor.downField(key).success match
-                case Some(cursor) => validateJsonSchema[t](key, cursor)
-                case None         => Right(None)
+          validateJsonObject(key, cursor, true) { key =>
+            cursor.downField(key).success match
+              case Some(cursor) => validateJsonSchema[t](key, cursor)
+              case None         => // intentionally blank
           }
     
         case '[NonEmptyChain[t]] =>
-          validateJsonArray(key, cursor, true) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor, true) { value =>
+            validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
-          Left(s"Macros does not yet support this type `${Type.show[tpe]}`")
+          report.throwError(s"Macros does not yet support this type `${Type.show[tpe]}`")
     
         case '[OneAnd[_, _]] =>
-          Left(s"Macros does not yet support this type cats.data.OneAnd")
+          report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
     
-        case '[Either[t, f]] => 
-          validateJsonSchema[t](key, cursor) match {
-            case error: Left[String, _] => error
-            case _                      => validateJsonSchema[f](key, cursor)
+        case '[Either[t, f]] =>
+          UTry(validateJsonSchema[t](key, cursor)) match {
+            case Success(_)   => // intentionally blank
+            case Failure(exc) => validateJsonSchema[f](key, cursor)
           }
-    
+ 
         case '[Validated[t, f]] =>
-          validateJsonSchema[t](key, cursor) match {
-            case error: Left[String, _] => error
-            case _                      => validateJsonSchema[f](key, cursor)
+          UTry(validateJsonSchema[t](key, cursor)) match {
+            case Success(_)   => // intentionally blank
+            case Failure(exc) => validateJsonSchema[f](key, cursor)
         }
 
         case '[Some[t]] =>
           validateJsonSchema[t](key, cursor)
 
         case '[None.type] =>
-          if (!cursor.value.isNull) Left(s"""Unexpected json type by key `$key`. Null is expected""")
-          else                      Right(None)
+          if (!cursor.value.isNull) 
+            throw Exception(s"""Unexpected json type by key `$key`. Null is expected""")
     
         case '[Option[t]] =>
-          if (!cursor.value.isNull) validateJsonSchema[t](key, cursor)
-          else                      Right(None)
+          if (!cursor.value.isNull) 
+            validateJsonSchema[t](key, cursor)
 
         case '[Iterable[t]] =>
-          validateJsonArray(key, cursor, true) {
-            value => validateJsonSchema[t](key, value.hcursor)
+          validateJsonArray(key, cursor, true) { value =>
+            validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[Boolean] | '[Int] | '[String] | '[JsonObject] => 
@@ -389,64 +381,52 @@ object macros:
           deconstructTypeSchemaProduct[t](key, cursor)      
 
         case '[unexpected] =>
-          Left(s"Macros implementation error. Unsupported type `${Type.show[unexpected]}`")
+          throw Exception(s"Macros implementation error. Unsupported type `${Type.show[unexpected]}`")
     
     end validateJsonSchema
     
     def validateJsonArray(key: String, cursor: HCursor, nonEmpty: Boolean = false, differentValues: Boolean = false)
-                         (f: Json => Either[String, None.type]): Either[String, None.type] =
+                         (f: Json => Any): Unit =
       
       cursor.focus match
         case Some(json) if json.isArray =>
           cursor.values match
             case Some(values) if nonEmpty && values.isEmpty =>
-              Left(s"""Unexpected json type by key `$key`. Non-empty json array is expected""")
+              throw Exception(s"""Unexpected json type by key `$key`. Non-empty json array is expected""")
             case Some(values) if differentValues && values.toSet.size == values.size =>
-              Left(s"""Unexpected json type by key `$key`. Json array expected with different values""")
+              throw Exception(s"""Unexpected json type by key `$key`. Json array expected with different values""")
             case Some(values) =>
-              values map f withFilter {
-                case l: Left[String, _] => true
-                case _                  => false
-              } map (a => a) headOption match {
-                case Some(e) => e
-                case None    => Right(None)
-              }
-            case None => Right(None)
-        case Some(json) => Left(s"""Unexpected json type by key `$key`. Json array is expected""")
-        case None       => Left(s"""Unexpected json type by key `$key`. Json array is expected""")
+              values map f
+            case None => // intentionally blank
+        case Some(json) => throw Exception(s"""Unexpected json type by key `$key`. Json array is expected""")
+        case None       => throw Exception(s"""Unexpected json type by key `$key`. Json array is expected""")
 
     end validateJsonArray
 
     def validateJsonObject(key: String, cursor: HCursor, nonEmpty: Boolean = false)
-                          (f: String => Either[String, None.type]): Either[String, None.type] =
+                          (f: String => Any): Unit =
       
       cursor.focus match
         case Some(json) if json.isObject =>
           cursor.keys match
             case Some(keys) if nonEmpty && keys.isEmpty =>
-              Left(s"""Unexpected json type by key `$key`. Non-empty json object is expected""")
+              throw Exception(s"""Unexpected json type by key `$key`. Non-empty json object is expected""")
             case Some(keys) if keys.toSet.size == keys.size =>
-              Left(s"""Unexpected json type by key `$key`. Json object expected with different keys""")
+              throw Exception(s"""Unexpected json type by key `$key`. Json object expected with different keys""")
             case Some(keys) =>
-              keys map f withFilter {
-                case l: Left[String, _] => true
-                case _                  => false
-              } map(a => a) headOption match {
-                case Some(e) => e
-                case None    => Right(None)
-              }
-            case None => Right(None)
-        case Some(json) => Left(s"""Unexpected json type by key `$key`. Json object is expected""")
-        case None       => Left(s"""Unexpected json type by key `$key`. Json object is expected""")
+              keys map f
+            case None => // intentionally blank
+        case Some(json) => throw Exception(s"""Unexpected json type by key `$key`. Json object is expected""")
+        case None       => throw Exception(s"""Unexpected json type by key `$key`. Json object is expected""")
 
     end validateJsonObject
 
-    def validatePrimitives[T: Type](key: String, cursor: ACursor)(using Quotes): Either[String, None.type] =
+    def validatePrimitives[T: Type](key: String, cursor: ACursor)(using Quotes): Unit =
       
-      def handleError(key: String, primitiveType: String, result: Either[Throwable, _]): Either[String, None.type] =
+      def handleError(key: String, primitiveType: String, result: Either[Throwable, _]): Unit =
         result match
-          case Right(_)     => Right(None)
-          case Left(error)  => Left(s"The json does not sitisfied to the schema: cannot treat `$key` field as `$primitiveType`. Underline error: `$error`")
+          case Right(_)     => // intentionally blank
+          case Left(error)  => throw Exception(s"The json does not sitisfied to the schema: cannot treat `$key` field as `$primitiveType`. Underline error: `$error`")
       end handleError
       
       Type.of[T] match
