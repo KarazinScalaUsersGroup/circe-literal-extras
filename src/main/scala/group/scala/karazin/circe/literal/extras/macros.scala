@@ -31,8 +31,9 @@ object macros:
           
           val jsonSchema = makeJsonSchema(getStringContextParts(sc), deconstructArguments(argExprs))
           UTry(validateJsonSchema("*", jsonSchema.hcursor)) match {
-            case Success(_)   => // intentionally blank
-            case Failure(exc) => report.throwError(s"`${exc.getMessage}`")
+            case Success(_)                    => // intentionally blank
+            case Failure(EncodeException(exc)) => report.throwError(s"$exc")
+            case Failure(exc) => throw exc
           }
           makeJson(sc, argExprs)
 
