@@ -1,7 +1,7 @@
-name: Compile the code
+name: Compile the code and run tests
 on: push
 jobs:
-  compile_code:
+  compile_and_testing:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -12,3 +12,5 @@ jobs:
           java-version: adopt@1.11
       - name: Compile
         run: sbt compile
+      - name: Run tests
+        run: sbt test
