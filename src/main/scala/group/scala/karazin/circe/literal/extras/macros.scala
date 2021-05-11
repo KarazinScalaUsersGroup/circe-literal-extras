@@ -1,5 +1,7 @@
 package group.scala.karazin.circe.literal.extras
 
+import java.util.UUID
+
 import cats.implicits.{given, _}
 import io.circe.parser
 import io.circe.syntax._
@@ -16,7 +18,7 @@ object macros:
     private val UnitUnit = JsonObject.empty
     private val BooleanUnit = true
 
-    private val SimpleIntUnit = 0
+    private val LongUnit: Long = 0
 
     private val DoubleUnit: Double = 0
     private val FloatUnit: Float = 0
@@ -28,7 +30,7 @@ object macros:
 
     private val BigDecimalUnit: BigDecimal = BigDecimal(0)
 
-    private val UUIDUnit = ""
+    private val UUIDUnit = UUID.randomUUID
 
     private val JsonObjectUnit = JsonObject.empty
     private val JsonUnit = Json.Null
@@ -51,8 +53,7 @@ object macros:
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
 
-
-      def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
+    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
 
       import quotes.reflect._
@@ -65,7 +66,6 @@ object macros:
           makeJson(sc, argExprs)
 
         case unexpected =>
-           // `new StringContext(...).showMeExpr(args: _*)` not an explicit `showMeExpr"..."`
            report.throwError(s"Expected Varargs got `$unexpected`")
     
     end apply
@@ -186,7 +186,7 @@ object macros:
 
         case '[Byte] | '[java.lang.Byte] | '[Short] | '[java.lang.Short] |
              '[Int] | '[java.lang.Integer] |'[Long] | '[java.lang.Long]  =>
-          Json.fromInt(SimpleIntUnit.toInt)
+          Json.fromLong(LongUnit)
 
         case '[Float] | '[java.lang.Float] =>
           Json.fromFloatOrNull(FloatUnit)
@@ -194,11 +194,11 @@ object macros:
         case '[Double] | '[java.lang.Double] =>
           Json.fromDoubleOrNull(DoubleUnit)
 
-        case '[String] =>
-          Json.fromString(StringUnit)
-
         case '[Char] | '[java.lang.Character] =>
           Json.fromString(CharUnit.toString)
+
+        case '[String] =>
+          Json.fromString(StringUnit)
 
         case '[BigInt] | '[java.math.BigInteger] =>
           Json.fromBigInt(BigIntUnit)
@@ -207,7 +207,7 @@ object macros:
           Json.fromBigDecimal(BigDecimalUnit)
 
         case '[java.util.UUID] =>
-          Json.fromString(UUIDUnit)
+          Json.fromString(UUIDUnit.toString)
 
         case '[java.time.Duration] =>
           Json.fromString(DurationUnit.toString)
@@ -488,11 +488,11 @@ object macros:
           case '[java.util.Currency] =>
             handleError(key, "java.util.Currency", cursor.as[java.util.Currency])
         
-        def handleError(key: String, promitiveType: String, result: Either[Throwable, _]): Unit = 
-          
+        def handleError(key: String, primitiveType: String, result: Either[Throwable, _]): Unit =
+
           result match
             case Right(_)     => // intentionally blank
-            case Left(error)  => report.throwError(s"The json does not sitisfied to the schema: cannot treat `$key` field as `$promitiveType`. Underline error: `$error`")
+            case Left(error)  => report.throwError(s"The json does not sitisfied to the schema: cannot treat `$key` field as `$primitiveType`. Underline error: `$error`")
         
         end handleError
     
