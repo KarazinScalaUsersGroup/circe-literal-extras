@@ -17,7 +17,7 @@ object macros:
 
   object encode:
 
-    final case class EncodeException(private val message: String = "") extends Exception(message)
+    final case class EncodeException(message: String) extends Exception(message)
 
 
     private val UnitUnit = JsonObject.empty
@@ -420,7 +420,7 @@ object macros:
           }
     
         case '[Set[t]] =>
-          validateJsonArray(key, cursor, false, true) { value =>
+          validateJsonArray(key, cursor, nonEmpty = false, differentValues = true) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
     
@@ -442,29 +442,29 @@ object macros:
         }
 
         case '[NonEmptyList[t]] =>
-          validateJsonArray(key, cursor, true) { value => 
+          validateJsonArray(key, cursor, nonEmpty = true) { value => 
             validateJsonSchema[t](key, value.hcursor)
           }
 
         case '[NonEmptyVector[t]] =>
-          validateJsonArray(key, cursor, true) { value =>
+          validateJsonArray(key, cursor, nonEmpty = true) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[NonEmptySet[t]] =>
-          validateJsonArray(key, cursor, true, true) { value =>
+          validateJsonArray(key, cursor, nonEmpty = true, differentValues = true) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
     
         case '[NonEmptyMap[f, t]] =>
-          validateJsonObject(key, cursor, true) { key =>
+          validateJsonObject(key, cursor, nonEmpty = true) { key =>
             cursor.downField(key).success match
               case Some(cursor) => validateJsonSchema[t](key, cursor)
               case None         => // intentionally blank
           }
     
         case '[NonEmptyChain[t]] =>
-          validateJsonArray(key, cursor, true) { value =>
+          validateJsonArray(key, cursor, nonEmpty = true) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
     
@@ -498,7 +498,7 @@ object macros:
             validateJsonSchema[t](key, cursor)
 
         case '[Iterable[t]] =>
-          validateJsonArray(key, cursor, true) { value =>
+          validateJsonArray(key, cursor, nonEmpty = true) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
     
