@@ -1,7 +1,6 @@
 package group.scala.karazin.circe.literal.extras.generators
 
 import cats.implicits._
-import group.scala.karazin.circe.literal.extras.generators.JsonGenerators.genJson
 import io.circe.syntax._
 import io.circe.testing.instances.arbitraryJsonObject
 import io.circe.{Json, JsonNumber, JsonObject, parser}
