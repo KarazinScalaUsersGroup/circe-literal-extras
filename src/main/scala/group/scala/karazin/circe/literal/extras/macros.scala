@@ -560,135 +560,135 @@ object macros:
     
       Type.of[T] match
         case '[Unit] =>
-    handleError(key, "Unit", cursor.as[Unit])
+          handleError(key, "Unit", cursor.as[Unit])
     
-    case '[Boolean] =>
-    handleError(key, "Boolean", cursor.as[Boolean])
-    
-    case '[java.lang.Boolean] =>
-    handleError(key, "java.lang.Boolean", cursor.as[java.lang.Boolean])
-    
-    case '[Int] =>
-    handleError(key, "Int", cursor.as[Int])
-    
-    case '[java.lang.Integer] =>
-    handleError(key, "java.lang.Integer", cursor.as[java.lang.Integer])
-    
-    case '[Short] =>
-    handleError(key, "Short", cursor.as[Short])
-    
-    case '[java.lang.Short] =>
-    handleError(key, "java.lang.Short", cursor.as[java.lang.Short])
-    
-    case '[Long] =>
-    handleError(key, "Long", cursor.as[Long])
-    
-    case '[java.lang.Long] =>
-    handleError(key, "java.lang.Long", cursor.as[java.lang.Long])
-    
-    case '[Byte] =>
-    handleError(key, "Byte", cursor.as[Byte])
-    
-    case '[java.lang.Byte] =>
-    handleError(key, "java.lang.Byte", cursor.as[java.lang.Byte])
-    
-    case '[Float] =>
-    handleError(key, "Float", cursor.as[Float])
-    
-    case '[java.lang.Float] =>
-    handleError(key, "java.lang.Float", cursor.as[java.lang.Float])
-    
-    case '[Double] =>
-    handleError(key, "Double", cursor.as[Double])
-    
-    case '[java.lang.Double] =>
-    handleError(key, "java.lang.Double", cursor.as[java.lang.Double])
-    
-    case '[String] =>
-    handleError(key, "String", cursor.as[String])
-    
-    case '[Char] =>
-    handleError(key, "Char", cursor.as[Char])
-    
-    case '[java.lang.Character] =>
-    handleError(key, "java.lang.Character", cursor.as[java.lang.Character])
-    
-    case '[BigInt] =>
-    handleError(key, "BigInt", cursor.as[BigInt])
-    
-    case '[java.math.BigInteger] =>
-    handleError(key, "java.math.BigInteger", cursor.as[java.math.BigInteger])
-    
-    case '[BigDecimal] =>
-    handleError(key, "BigDecimal", cursor.as[BigDecimal])
-    
-    case '[java.math.BigDecimal] =>
-    handleError(key, "java.math.BigDecimal", cursor.as[java.math.BigDecimal])
-    
-    case '[Json] =>
-    handleError(key, "Json", cursor.as[Json])
-    
-    case '[JsonObject] =>
-    handleError(key, "JsonObject", cursor.as[JsonObject])
-    
-    case '[JsonNumber] =>
-    handleError(key, "JsonNumber", cursor.as[JsonNumber])
-    
-    case '[java.util.UUID] =>
-    handleError(key, "java.util.UUID", cursor.as[java.util.UUID])
-    
-    case '[java.time.Duration] =>
-    handleError(key, "java.time.Duration", cursor.as[java.time.Duration])
-    
-    case '[java.time.Instant] =>
-    handleError(key, "java.time.Instant", cursor.as[java.time.Instant])
-    
-    case '[java.time.Period] =>
-    handleError(key, "java.time.Period", cursor.as[java.time.Period])
-    
-    case '[java.time.ZoneId] =>
-    handleError(key, "java.time.ZoneId", cursor.as[java.time.ZoneId])
-    
-    case '[java.time.LocalDate] =>
-    handleError(key, "java.time.LocalDate", cursor.as[java.time.LocalDate])
-    
-    case '[java.time.LocalTime] =>
-    handleError(key, "java.time.LocalTime", cursor.as[java.time.LocalTime])
-    
-    case '[java.time.LocalDateTime] =>
-    handleError(key, "java.time.LocalDateTime", cursor.as[java.time.LocalDateTime])
-    
-    case '[java.time.MonthDay] =>
-    handleError(key, "java.time.MonthDay", cursor.as[java.time.MonthDay])
-    
-    case '[java.time.OffsetTime] =>
-    handleError(key, "java.time.OffsetTime", cursor.as[java.time.OffsetTime])
-    
-    case '[java.time.OffsetDateTime] =>
-    handleError(key, "java.time.OffsetDateTime", cursor.as[java.time.OffsetDateTime])
-    
-    case '[java.time.Year] =>
-    handleError(key, "java.time.Year", cursor.as[java.time.Year])
-    
-    case '[java.time.YearMonth] =>
-    handleError(key, "java.time.YearMonth", cursor.as[java.time.YearMonth])
-    
-    case '[java.time.ZonedDateTime] =>
-    handleError(key, "java.time.ZonedDateTime", cursor.as[java.time.ZonedDateTime])
-    
-    case '[java.time.ZoneOffset] =>
-    handleError(key, "java.time.ZoneOffset", cursor.as[java.time.ZoneOffset])
-    
-    case '[java.util.Currency] =>
-    handleError(key, "java.util.Currency", cursor.as[java.util.Currency])
+        case '[Boolean] =>
+          handleError(key, "Boolean", cursor.as[Boolean])
+        
+        case '[java.lang.Boolean] =>
+          handleError(key, "java.lang.Boolean", cursor.as[java.lang.Boolean])
+        
+        case '[Int] =>
+          handleError(key, "Int", cursor.as[Int])
+        
+        case '[java.lang.Integer] =>
+          handleError(key, "java.lang.Integer", cursor.as[java.lang.Integer])
+        
+        case '[Short] =>
+          handleError(key, "Short", cursor.as[Short])
+        
+        case '[java.lang.Short] =>
+          handleError(key, "java.lang.Short", cursor.as[java.lang.Short])
+        
+        case '[Long] =>
+          handleError(key, "Long", cursor.as[Long])
+        
+        case '[java.lang.Long] =>
+          handleError(key, "java.lang.Long", cursor.as[java.lang.Long])
+        
+        case '[Byte] =>
+          handleError(key, "Byte", cursor.as[Byte])
+        
+        case '[java.lang.Byte] =>
+          handleError(key, "java.lang.Byte", cursor.as[java.lang.Byte])
+        
+        case '[Float] =>
+          handleError(key, "Float", cursor.as[Float])
+        
+        case '[java.lang.Float] =>
+          handleError(key, "java.lang.Float", cursor.as[java.lang.Float])
+        
+        case '[Double] =>
+          handleError(key, "Double", cursor.as[Double])
+        
+        case '[java.lang.Double] =>
+          handleError(key, "java.lang.Double", cursor.as[java.lang.Double])
+        
+        case '[String] =>
+          handleError(key, "String", cursor.as[String])
+        
+        case '[Char] =>
+          handleError(key, "Char", cursor.as[Char])
+        
+        case '[java.lang.Character] =>
+          handleError(key, "java.lang.Character", cursor.as[java.lang.Character])
+        
+        case '[BigInt] =>
+          handleError(key, "BigInt", cursor.as[BigInt])
+        
+        case '[java.math.BigInteger] =>
+          handleError(key, "java.math.BigInteger", cursor.as[java.math.BigInteger])
+        
+        case '[BigDecimal] =>
+          handleError(key, "BigDecimal", cursor.as[BigDecimal])
+        
+        case '[java.math.BigDecimal] =>
+          handleError(key, "java.math.BigDecimal", cursor.as[java.math.BigDecimal])
+        
+        case '[Json] =>
+          handleError(key, "Json", cursor.as[Json])
+        
+        case '[JsonObject] =>
+          handleError(key, "JsonObject", cursor.as[JsonObject])
+        
+        case '[JsonNumber] =>
+          handleError(key, "JsonNumber", cursor.as[JsonNumber])
+        
+        case '[java.util.UUID] =>
+          handleError(key, "java.util.UUID", cursor.as[java.util.UUID])
+        
+        case '[java.time.Duration] =>
+          handleError(key, "java.time.Duration", cursor.as[java.time.Duration])
+        
+        case '[java.time.Instant] =>
+          handleError(key, "java.time.Instant", cursor.as[java.time.Instant])
+        
+        case '[java.time.Period] =>
+          handleError(key, "java.time.Period", cursor.as[java.time.Period])
+        
+        case '[java.time.ZoneId] =>
+          handleError(key, "java.time.ZoneId", cursor.as[java.time.ZoneId])
+        
+        case '[java.time.LocalDate] =>
+          handleError(key, "java.time.LocalDate", cursor.as[java.time.LocalDate])
+        
+        case '[java.time.LocalTime] =>
+          handleError(key, "java.time.LocalTime", cursor.as[java.time.LocalTime])
+        
+        case '[java.time.LocalDateTime] =>
+          handleError(key, "java.time.LocalDateTime", cursor.as[java.time.LocalDateTime])
+        
+        case '[java.time.MonthDay] =>
+          handleError(key, "java.time.MonthDay", cursor.as[java.time.MonthDay])
+        
+        case '[java.time.OffsetTime] =>
+          handleError(key, "java.time.OffsetTime", cursor.as[java.time.OffsetTime])
+        
+        case '[java.time.OffsetDateTime] =>
+          handleError(key, "java.time.OffsetDateTime", cursor.as[java.time.OffsetDateTime])
+        
+        case '[java.time.Year] =>
+          handleError(key, "java.time.Year", cursor.as[java.time.Year])
+        
+        case '[java.time.YearMonth] =>
+          handleError(key, "java.time.YearMonth", cursor.as[java.time.YearMonth])
+        
+        case '[java.time.ZonedDateTime] =>
+          handleError(key, "java.time.ZonedDateTime", cursor.as[java.time.ZonedDateTime])
+        
+        case '[java.time.ZoneOffset] =>
+          handleError(key, "java.time.ZoneOffset", cursor.as[java.time.ZoneOffset])
+        
+        case '[java.util.Currency] =>
+          handleError(key, "java.util.Currency", cursor.as[java.util.Currency])
     
       def handleError(key: String, primitiveType: String, result: Either[Throwable, _]): Unit =
       
         result match
           case Right(_)     => // intentionally blank
-          case Left(error)  => report.throwError(s"The json does not sitisfied to the schema: cannot treat `$key` field as `$primitiveType`. Underline error: `$error`")
+          case Left(error)  => throw EncodeException(s"The json does not sitisfied to the schema: cannot treat `$key` field as `$primitiveType`. Underline error: `$error`")
       
-        end handleError
+      end handleError
     
     end validatePrimitives
     
