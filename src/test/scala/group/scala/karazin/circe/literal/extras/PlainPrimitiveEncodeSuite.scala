@@ -14,20 +14,6 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
     super.scalaCheckTestParameters
       .withMinSuccessfulTests(1)
 
-  property("raw json parsing") {
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        $ {macros.encode[JsonObject]('sc, 'args)}
-
-    forAll { (json: JsonObject) =>
-
-      val encodedJson = (encode"$json").asObject.get
-
-      assertEquals(json, encodedJson)
-    }
-  }
-
   property("inlined Unit value") {
     case class Primitive(value: Unit) derives Codec.AsObject
 
@@ -1328,4 +1314,48 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
       assertEquals(result, expected)
     }
 
+  }
+
+  property("inlined JsonObject value") {
+
+    case class Primitive(value: JsonObject) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        $ {macros.encode[Primitive]('sc, 'args)}
+
+    forAll { (jsonObject: JsonObject) =>
+
+      val primitive = Primitive(jsonObject)
+
+      val result: Json = JsonObject("value" -> jsonObject.asJson).asJson
+
+      val expected: Json =
+        encode"""
+        {
+          "value": ${primitive.value}
+        }"""
+
+      assertEquals(result, expected)
+    }
+  }
+
+  property("inlined primitive with JsonObject value") {
+
+    case class Primitive(value: JsonObject) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        $ {macros.encode[Primitive]('sc, 'args)}
+
+    forAll { (jsonObject: JsonObject) =>
+
+      val primitive = Primitive(jsonObject)
+
+      val result: Json = JsonObject("value" -> jsonObject.asJson).asJson
+
+      val expected: Json = encode"$primitive"
+
+      assertEquals(result, expected)
+    }
   }
