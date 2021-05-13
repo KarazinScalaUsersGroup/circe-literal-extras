@@ -2,7 +2,6 @@ package group.scala.karazin.circe.literal.extras
 
 import java.util.UUID
 
-import cats.implicits.{given, _}
 import cats.implicits._
 import cats.data.{Chain, NonEmptyChain, NonEmptyList, NonEmptyMap, NonEmptySet, NonEmptyVector, OneAnd, Validated}
 import io.circe.parser
