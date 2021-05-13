@@ -1,11 +1,6 @@
 package group.scala.karazin.circe.literal.extras.arbitraries
 
-import cats.implicits._
-import io.circe.syntax._
-import io.circe.parser
-import io.circe.{Json, JsonObject}
 import org.scalacheck._
-import org.scalacheck.Prop._
 import java.util.Currency
 import scala.jdk.CollectionConverters._
 
