@@ -13,6 +13,6 @@ trait CurrencyArbitraries {
 
   val currencies = Currency.getAvailableCurrencies.asScala
 
-  given Arbitrary[Currency] = Arbitrary(Gen.pick(1, currencies).map(_.head))
+  given Arbitrary[Currency] = Arbitrary(Gen.oneOf(currencies))
 
 }
