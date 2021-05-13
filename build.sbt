@@ -8,7 +8,7 @@ lazy val root = project
   .settings(testFrameworks += new TestFramework("munit.Framework"))
   .settings(Test / parallelExecution := true)
 
-lazy val dependencies = circe ++ munit
+lazy val dependencies = cats ++ circe ++ munit
 
 testFrameworks += new TestFramework("munit.Framework")
 
