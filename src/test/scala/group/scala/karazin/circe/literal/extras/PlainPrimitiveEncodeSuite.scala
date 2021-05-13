@@ -3,16 +3,30 @@ package group.scala.karazin.circe.literal.extras
 import cats.implicits._
 import io.circe.syntax._
 import io.circe.parser
-import io.circe.{Json, JsonObject}
 import io.circe.{Json, JsonObject, Encoder, Codec}
 import org.scalacheck._
 import org.scalacheck.Prop._
+import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
 
   override def scalaCheckTestParameters =
     super.scalaCheckTestParameters
       .withMinSuccessfulTests(1)
+
+  property("raw json parsing") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        $ {macros.encode[JsonObject]('sc, 'args)}
+
+    forAll { (json: JsonObject) =>
+
+      val encodedJson = (encode"$json").asObject.get
+
+      assertEquals(json, encodedJson)
+    }
+  }
 
   property("inlined Unit value") {
     case class Primitive(value: Unit) derives Codec.AsObject
