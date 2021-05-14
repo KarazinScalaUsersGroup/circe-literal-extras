@@ -3,10 +3,10 @@ package group.scala.karazin.circe.literal.extras
 import cats.implicits._
 import io.circe.syntax._
 import io.circe.parser
-import io.circe.{Json, JsonObject}
 import io.circe.{Json, JsonObject, Encoder, Codec}
 import org.scalacheck._
 import org.scalacheck.Prop._
+import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
 
@@ -1252,4 +1252,48 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
       assertEquals(result, expected)
     }
 
+  }
+
+  property("inlined JsonObject value") {
+
+    case class Primitive(value: JsonObject) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        $ {macros.encode[Primitive]('sc, 'args)}
+
+    forAll { (jsonObject: JsonObject) =>
+
+      val primitive = Primitive(jsonObject)
+
+      val result: Json = JsonObject("value" -> jsonObject.asJson).asJson
+
+      val expected: Json =
+        encode"""
+        {
+          "value": ${primitive.value}
+        }"""
+
+      assertEquals(result, expected)
+    }
+  }
+
+  property("inlined primitive with JsonObject value") {
+
+    case class Primitive(value: JsonObject) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        $ {macros.encode[Primitive]('sc, 'args)}
+
+    forAll { (jsonObject: JsonObject) =>
+
+      val primitive = Primitive(jsonObject)
+
+      val result: Json = JsonObject("value" -> jsonObject.asJson).asJson
+
+      val expected: Json = encode"$primitive"
+
+      assertEquals(result, expected)
+    }
   }
