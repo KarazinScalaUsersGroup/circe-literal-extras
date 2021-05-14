@@ -1254,68 +1254,6 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined java.util.UUID value") {
-    case class Primitive(value: java.util.UUID) derives Codec.AsObject
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Primitive]('sc, 'args) }
-
-    forAll { (value: java.util.UUID) =>
-
-      val primitive = Primitive(value)
-
-      lazy val result: Json =
-        encode"""
-              {
-                "value": ${primitive.value}
-              }
-            """
-
-      val expected: Json =
-        parser.parse(
-          s"""
-          {
-            "value": "${primitive.value}"
-          }
-         """
-        ).toOption.get
-
-      assertEquals(result, expected)
-    }
-
-  }
-
-  property("inlined primitive with java.util.UUID value") {
-    case class Primitive(value: java.util.UUID) derives Codec.AsObject
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Primitive]('sc, 'args) }
-
-    forAll { (value: java.util.UUID) =>
-
-      val primitive = Primitive(value)
-
-      lazy val result: Json =
-        encode"""
-              $primitive
-            """
-
-      val expected: Json =
-        parser.parse(
-          s"""
-          {
-            "value": "${primitive.value}"
-          }
-         """
-        ).toOption.get
-
-      assertEquals(result, expected)
-    }
-
-  }
-
   property("inlined JsonObject value") {
 
     case class Primitive(value: JsonObject) derives Codec.AsObject
