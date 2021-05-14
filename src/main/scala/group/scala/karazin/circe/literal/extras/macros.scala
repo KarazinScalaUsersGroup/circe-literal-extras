@@ -201,7 +201,22 @@ object macros:
 
         case '[Map[f, t]] if deconstructArgument[f].isString =>
           Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
+    
+        case '[Iterable[t]] =>
+          Json.arr(deconstructArgument[t])
+    
+        case '[Some[t]] =>
+          deconstructArgument[t]
+    
+        case '[None.type] =>
+          Json.Null
+    
+        case '[Option[t]] =>
+          deconstructArgument[t]
 
+        case '[Either[t, f]] =>
+          Json.fromFields((StringUnit, deconstructArgument[f]) :: Nil)
+    
         case '[NonEmptyList[t]] =>
           Json.arr(deconstructArgument[t])
     
@@ -222,33 +237,12 @@ object macros:
 
         case '[Validated[t, f]] =>
           Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
-    
-        case '[Either[t, f]] =>
-          Json.fromFields((StringUnit, deconstructArgument[f]) :: Nil)
-
-        case '[Some[t]] =>
-          deconstructArgument[t]
-
-        case '[None.type] =>
-          Json.Null
-    
-        case '[Option[t]] => 
-          deconstructArgument[t]
-    
-        case '[JsonObject] =>
-          Json.fromJsonObject(JsonObjectUnit)
-
-        case '[Iterable[t]] =>
-          Json.arr(deconstructArgument[t])
 
         case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
           report.throwError(s"Macros does not yet support this type [${Type.show[tpe]}]")
     
         case '[OneAnd[_, _]] =>
           report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
-    
-        case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
-          Json.fromFields(deconstructArgumentProduct[t])
 
         case '[Unit] =>
           Json.fromJsonObject(UnitUnit)
@@ -335,11 +329,8 @@ object macros:
         case '[JsonNumber] =>
           Json.fromJsonNumber(JsonNumberUnit)
 
-        case '[List[t]] =>
-          Json.arr(deconstructArgument[t])
-
-        case '[Option[t]] =>
-          deconstructArgument[t]
+        case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
+          Json.fromFields(deconstructArgumentProduct[t])
       
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required " +
@@ -349,9 +340,9 @@ object macros:
             s"java.math.BigDecimal, java.util.UUID, java.time.Duration, java.time.Instant, java.time.Period, " +
             s"java.time.ZoneId, java.time.LocalDate, java.time.LocalTime, java.time.LocalDateTime, java.time.MonthDay," +
             s"java.time.OffsetTime, java.time.OffsetDateTime,java.time.Year, java.time.YearMonth, java.time.ZonedDateTime," +
-            s"java.time.ZoneOffset, java.util.Currency, List, Seq, Vector, Map, Set, Iterable, " +
+            s"java.time.ZoneOffset, java.util.Currency, List, Seq, Vector, Map, Set, Iterable, Option, Some, None, Either, " +
             s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.NonEmptySet, cats.data.NonEmptyMap, " +
-            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.Validated, Either, Option, Some, None, Product " +
+            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.Validated, Product " +
             s"but found [${Type.show[tpe]}]")
 
     end deconstructArgument
@@ -431,7 +422,12 @@ object macros:
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
-
+    
+        case '[Iterable[t]] =>
+          validateJsonArray(key, cursor) { value =>
+            validateJsonSchema[t](key, value.hcursor)
+          }
+    
         case '[Chain[t]] =>
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
@@ -442,7 +438,7 @@ object macros:
             cursor.downField(key).success match
               case Some(cursor) => validateJsonSchema[t](key, cursor)
               case None         => // intentionally blank
-        }
+          }
 
         case '[NonEmptyList[t]] =>
           validateJsonArray(key, cursor, nonEmptyContainer = true) { value =>
@@ -499,11 +495,6 @@ object macros:
         case '[Option[t]] =>
           if (!cursor.value.isNull)
             validateJsonSchema[t](key, cursor)
-
-        case '[Iterable[t]] =>
-          validateJsonArray(key, cursor) { value =>
-            validateJsonSchema[t](key, value.hcursor)
-          }
 
         case  '[Unit] | '[Boolean] | '[java.lang.Boolean] | '[Byte] | '[java.lang.Byte] | '[Short]  | '[java.lang.Short] |
               '[Int] | '[java.lang.Integer] | '[Long] | '[java.lang.Long] | '[Float]  | '[java.lang.Float] |
