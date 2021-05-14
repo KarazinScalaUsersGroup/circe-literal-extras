@@ -9,7 +9,7 @@ import org.scalacheck._
 
 class EncodeListSuite extends munit.ScalaCheckSuite:
   
-  property("inlined list of strings") {
+  property("inlined list of ints") {
     case class Container(value: List[Int]) derives Codec.AsObject
 
     extension (inline sc: StringContext)
@@ -17,8 +17,6 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
         ${ macros.encode[Container]('sc, 'args) }
     
     forAll { (value: List[Int]) =>
-      
-      val container = Container(value)
       
       lazy val result: Json =
         encode"""
@@ -39,6 +37,39 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
       assertEquals(result, expected)
     }
 
+  }
+
+  property("inlined container object parsing") {
+
+    case class Container(value: List[List[Int]]) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Container]('sc, 'args) }
+
+    forAll { (value: List[List[Int]]) =>
+
+      val container = Container(value)
+
+      val result: Json =
+        encode"""
+                $container
+                """
+
+      val expected =
+        parser.parse(
+          s"""
+              {
+                "value": [ ${value map {
+                    list => s""" [ ${list.map(_.toString) mkString ", "} ] """
+                  } mkString ", "
+                }]
+              }
+              """
+        ).toOption.get
+
+      assertEquals(result, expected)
+    }
   }
 
   property("inlined list of options") {
@@ -69,6 +100,36 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
       assertEquals(result, expected)
 
+    }
+  }
+
+  property("inlined container like object parsing") {
+
+    case class Container(value: List[Option[Int]]) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Container]('sc, 'args) }
+
+    forAll { (value: List[Int]) =>
+
+      val result: Json =
+        encode"""
+                 {
+                   "value": $value
+                 }
+                """
+
+      val expected =
+        parser.parse(
+          s"""
+              {
+                "value": [ ${value.map(_.toString) mkString ", "} ]
+              }
+              """
+        ).toOption.get
+
+      assertEquals(result, expected)
     }
   }
 
@@ -108,69 +169,6 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("inlined container object parsing") {
-
-    case class Container(value: List[List[Int]]) derives Codec.AsObject
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Container]('sc, 'args) }
-    
-    forAll { (value: List[List[Int]]) =>
-
-      val container = Container(value)
-      
-      val result: Json =
-        encode"""
-                $container
-                """
-
-      val expected =
-        parser.parse(
-          s"""
-              {
-                "value": [ ${value map {
-                    list => s""" [ ${list.map(_.toString) mkString ", "} ] """
-                  } mkString ", "
-                } ]
-              }
-              """
-        ).toOption.get
-
-      assertEquals(result, expected)
-    }
-  }
-
-  property("inlined container like object parsing") {
-
-    case class Container(value: List[Option[Int]]) derives Codec.AsObject
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Container]('sc, 'args) }
-
-    forAll { (value: List[Int]) =>
-
-      val result: Json =
-        encode"""
-                 {
-                   "value": $value
-                 }
-                """
-
-      val expected =
-        parser.parse(
-          s"""
-              {
-                "value": [ ${value.map(_.toString) mkString ", "} ]
-              }
-              """
-        ).toOption.get
-
-      assertEquals(result, expected)
-    }
-  }
-
   test("corrupted ints parsing compile error") {
     compileErrors(
       """
@@ -182,7 +180,7 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
          
         encode\"\"\"
                 {
-                  "value": [ -1, "" ]
+                  "value": [ -1, 0.1 ]
                 }
         \"\"\"
       """
