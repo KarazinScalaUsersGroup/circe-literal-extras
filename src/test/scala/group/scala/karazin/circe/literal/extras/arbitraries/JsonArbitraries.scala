@@ -13,4 +13,7 @@ trait JsonArbitraries {
 
   given Arbitrary[JsonObject] = arbitraryJsonObject
 
+  given Arbitrary[Iterable[JsonObject]] =
+    Arbitrary(Gen.containerOf[Iterable, JsonObject](summon[Arbitrary[JsonObject]].arbitrary))
+
 }
