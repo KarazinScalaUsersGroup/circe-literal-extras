@@ -111,7 +111,7 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${ macros.encode[Container]('sc, 'args) }
 
-    forAll { (value: List[Int]) =>
+    forAll { (value: Iterable[Int]) =>
 
       val result: Json =
         encode"""
