@@ -342,8 +342,8 @@ object macros:
             s"java.time.OffsetTime, java.time.OffsetDateTime,java.time.Year, java.time.YearMonth, java.time.ZonedDateTime," +
             s"java.time.ZoneOffset, java.util.Currency, List, Seq, Vector, Map, Set, Iterable, Option, Some, None, Either, " +
             s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.NonEmptySet, cats.data.NonEmptyMap, " +
-            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.Validated, Product " +
-            s"but found [${Type.show[tpe]}]")
+            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.Validated, io.circe.Json, io.circe.JsonObject, " +
+            s"io.circe.JsonNumber, Product but found [${Type.show[tpe]}]")
 
     end deconstructArgument
     
