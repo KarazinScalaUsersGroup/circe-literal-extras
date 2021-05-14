@@ -48,18 +48,18 @@ trait ArbitrariesJavaDateTime {
   val yearMonthGenerator: Gen[YearMonth] =
     for {
       y <- Gen.choose(Year.MIN_VALUE, Year.MAX_VALUE)
-      m <- Gen.choose(1,12)
+      m <- Gen.choose(1, 12)
     } yield YearMonth.of(y, m)
 
   val zonedDateTimeGenerator: Gen[ZonedDateTime] =
     for {
-      ld <- Gen.choose(LocalDate.MIN, LocalDate.MAX)
-      lt <- Gen.choose(LocalTime.MIN, LocalTime.MAX)
-      z  <- Gen.oneOf("EST", "HST", "MST", "ACT", "AET", "AGT",
+      localDate <- Gen.choose(LocalDate.MIN, LocalDate.MAX)
+      localTime <- Gen.choose(LocalTime.MIN, LocalTime.MAX)
+      zone  <- Gen.oneOf("EST", "HST", "MST", "ACT", "AET", "AGT",
         "ART", "AST", "BET", "BST", "CAT", "CNT", "CST", "CTT",
         "EAT", "ECT", "IET", "IST", "JST", "MIT", "NET", "NST",
         "PLT", "PNT", "PRT", "PST", "SST", "VST")
-    } yield ZonedDateTime.of(ld, lt, ZoneId.of(z))
+    } yield ZonedDateTime.of(localDate, localTime, ZoneId.of(zone))
 
   val zoneOffsetGenerator: Gen[ZoneOffset] = Gen.choose(ZoneOffset.MIN, ZoneOffset.MAX)
 
