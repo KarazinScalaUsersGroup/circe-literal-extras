@@ -9,36 +9,78 @@ import io.circe.disjunctionCodecs._
 
 class EncodeEitherSuite extends munit.ScalaCheckSuite:
 
-  property("inlined Either[Int, Int]") {
-    case class Container(value: Either[Int, String]) derives Codec.AsObject
+  property("bug 1") {
+    case class Bar(value: Int) derives Codec.AsObject
+    given Arbitrary[Bar] = Arbitrary(Arbitrary.arbitrary[Int] map {v => Bar(v)})
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Container]('sc, 'args) }
+        ${ macros.encode[Bar]('sc, 'args) }
+
+    forAll { (value: Bar) =>
+
+      val result: Json =
+        encode""" {
+                    "value": 0,
+                    "fg": 0
+                  }
+                  """
+
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+    }
+
+  }
+
+  property("bug 2") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
 
     forAll { (value: Either[Int, String]) =>
 
-      val container = Container(value)
+      val result: Json = encode""" $value """
 
-//      lazy val result: Json =
-//        encode"""
-//              {
-//                "value": $value
-//              }
-//            """
-//
-//      val expected: Json =
-//        parser.parse(
-//          s"""
-//          {
-//            "value": ${value.fold(_.toString, _.toString)}
-//          }
-//         """
-//        ).toOption.get
-//
-//      assertEquals(result, expected)
-      val test: Either[String, Int] = Left("test")
-      print(test.asJson)
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+    }
+
+  }
+
+  property("inlined Either[Int, String] parsing") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Either[Int, String]]('sc, 'args) }
+
+    forAll { (value: Either[Int, String]) =>
+
+      val result: Json = encode""" $value """
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+    }
+
+  }
+
+  property("inlined Either[Option[Int], List[String]] parsing") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
+
+    forAll { (value: Either[Int, List[String]]) =>
+
+      val result: Json = encode""" $value """
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
     }
 
   }
