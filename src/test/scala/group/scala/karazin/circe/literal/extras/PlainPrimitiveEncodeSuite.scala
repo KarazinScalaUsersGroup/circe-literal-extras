@@ -1299,21 +1299,26 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("inlined Currency value") {
+  property("inlined Primitive value") {
 
     case class Primitive(value: Currency) derives Codec.AsObject
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        $ {macros.encode[Currency]('sc, 'args)}
+        $ {macros.encode[Primitive]('sc, 'args)}
 
     forAll { (currency: Currency) =>
 
       val primitive = Primitive(currency)
 
-      val result: Json = currency.asJson
+      val result: Json = JsonObject("value" -> primitive.value.asJson).asJson
 
-      val expected: Json = encode"${primitive.value}"
+      val expected: Json =
+        encode"""
+          {
+            "value": ${primitive.value}
+          }
+         """
 
       assertEquals(result, expected)
     }
