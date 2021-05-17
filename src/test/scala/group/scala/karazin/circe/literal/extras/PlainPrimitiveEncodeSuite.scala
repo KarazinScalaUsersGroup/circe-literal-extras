@@ -7,6 +7,7 @@ import io.circe.{Json, JsonObject, Encoder, Codec}
 import org.scalacheck._
 import org.scalacheck.Prop._
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
+import java.util.Currency
 
 class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
 
@@ -1296,4 +1297,51 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
 
       assertEquals(result, expected)
     }
+  }
+
+  property("inlined Currency value") {
+
+    case class Primitive(value: Currency) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        $ {macros.encode[Primitive]('sc, 'args)}
+
+    forAll { (currency: Currency) =>
+
+      val primitive = Primitive(currency)
+
+      val result: Json = JsonObject("value" -> primitive.value.asJson).asJson
+
+      val expected: Json =
+        encode"""
+          {
+            "value": ${primitive.value}
+          }
+         """
+
+      assertEquals(result, expected)
+    }
+
+  }
+
+  property("inlined primitive with Currency value") {
+
+    case class Primitive(value: Currency) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        $ {macros.encode[Primitive]('sc, 'args)}
+
+    forAll { (currency: Currency) =>
+
+      val primitive = Primitive(currency)
+
+      val result: Json = JsonObject("value" -> currency.asJson).asJson
+
+      val expected: Json = encode"$primitive"
+
+      assertEquals(result, expected)
+    }
+
   }
