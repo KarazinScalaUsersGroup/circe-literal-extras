@@ -1299,7 +1299,7 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("inlined Primitive value") {
+  property("inlined Currency value") {
 
     case class Primitive(value: Currency) derives Codec.AsObject
 
