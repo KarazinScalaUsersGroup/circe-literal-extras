@@ -54,28 +54,6 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Iterable with None") {
-
-    val genIterableWithNone =
-      Gen.nonEmptyContainerOf[Iterable, Option[Int]](Arbitrary.arbitrary[Option[Int]])
-        .retryUntil(_.forall(_.isEmpty))
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${macros.encode[Iterable[Option[Int]]]('sc, 'args)}
-
-    forAll(genIterableWithNone) { (intIterable: Iterable[Option[Int]]) =>
-
-      val result: Json = encode"${intIterable}"
-
-      val expected: Json = Json.arr(List.fill(intIterable.size)(Json.Null): _*)
-
-      assertEquals(result, expected)
-
-    }
-
-  }
-
   property("inlined Iterable of primitives with Int values") {
 
     case class Primitive(value: Int) derives Codec.AsObject
