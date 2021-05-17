@@ -10,28 +10,23 @@ import org.scalacheck._
 class EncodeListSuite extends munit.ScalaCheckSuite:
   
   property("inlined list of ints") {
-    case class Container(value: List[Int]) derives Codec.AsObject
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Container]('sc, 'args) }
+        ${ macros.encode[List[Int]]('sc, 'args) }
     
     forAll { (value: List[Int]) =>
       
       lazy val result: Json =
         encode"""
-              {
-                "value": ${value}
-              }
+                ${value}
             """
 
       val expected: Json =
         parser.parse(
           s"""
-          {
-            "value": [ ${value.map(_.toString) mkString ", "} ]
-          }
-         """
+              [ ${value.map(_.toString) mkString ", "} ]
+             """
         ).toOption.get
       
       assertEquals(result, expected)
@@ -41,31 +36,27 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
   property("inlined container object parsing") {
 
-    case class Container(value: List[List[Int]]) derives Codec.AsObject
-
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Container]('sc, 'args) }
+        ${ macros.encode[List[List[Int]]]('sc, 'args) }
 
     forAll { (value: List[List[Int]]) =>
 
-      val container = Container(value)
-
       val result: Json =
         encode"""
-                $container
+                $value
                 """
 
       val expected =
         parser.parse(
           s"""
-              {
-                "value": [ ${value map {
+             [ 
+                ${ value map {
                     list => s""" [ ${list.map(_.toString) mkString ", "} ] """
                   } mkString ", "
-                }]
-              }
-              """
+                } 
+             ]
+             """
         ).toOption.get
 
       assertEquals(result, expected)
@@ -74,27 +65,21 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
   property("inlined list of options") {
 
-    case class Container(value: List[Option[Int]]) derives Codec.AsObject
-
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Container]('sc, 'args) }
+        ${ macros.encode[List[Option[Int]]]('sc, 'args) }
 
     forAll { (options: List[Option[Int]]) =>
 
       lazy val result: Json =
         encode"""
-                {
-                  "value": $options
-                }
+                $options
                 """
 
       val expected =
         parser.parse(
           s"""
-              {
-                "value": [ ${options.map(v => v.fold("null")(_.toString)) mkString ", "} ]
-              }
+              [ ${options.map(v => v.fold("null")(_.toString)) mkString ", "} ]
               """
         ).toOption.get
 
@@ -105,28 +90,22 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
   property("inlined container like object parsing") {
 
-    case class Container(value: List[Option[Int]]) derives Codec.AsObject
-
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Container]('sc, 'args) }
+        ${ macros.encode[List[Option[Int]]]('sc, 'args) }
 
     forAll { (value: Iterable[Int]) =>
 
       val result: Json =
         encode"""
-                 {
-                   "value": $value
-                 }
+                $value
                 """
 
       val expected =
         parser.parse(
           s"""
-              {
-                "value": [ ${value.map(_.toString) mkString ", "} ]
-              }
-              """
+             [ ${value.map(_.toString) mkString ", "} ]
+             """
         ).toOption.get
 
       assertEquals(result, expected)
@@ -135,33 +114,29 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
   property("inlined list of Bar objects") {
 
-    case class Bar(value: Int) derives Codec.AsObject
-    given Arbitrary[Bar] = Arbitrary(Arbitrary.arbitrary[Int] map {v => Bar(v)})
-    
-    case class Container(value: List[Bar]) derives Codec.AsObject
+    case class Primitive(value: Int) derives Codec.AsObject
+    given Arbitrary[Primitive] = Arbitrary(Arbitrary.arbitrary[Int] map {v => Primitive(v)})
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Container]('sc, 'args) }
+        ${ macros.encode[List[Primitive]]('sc, 'args) }
     
-    forAll { (value: List[Bar]) =>
+    forAll { (value: List[Primitive]) =>
 
       val result: Json =
         encode""" 
-                 {
-                   "value": $value
-                 }
+                 $value
                  """
 
       val expected =
         parser.parse(
           s"""
-              {
-                "value": [ ${value map {
-                    bar => s"""{ "value": ${bar.value} }"""
+              [ 
+                ${ value map {
+                    primitive => s"""{ "value": ${primitive.value} }"""
                   } mkString ", "
-                }]
-              }
+                }
+              ]
               """
         ).toOption.get
 
@@ -170,37 +145,31 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
   }
 
   test("corrupted ints parsing compile error") {
+    
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[List[Int]]('sc, 'args) }
+        
     compileErrors(
       """
-         case class Container(value: List[Int]) derives Codec.AsObject
-
-        extension (inline sc: StringContext)
-          inline def encode(inline args: Any*): Json =
-            ${ macros.encode[Container]('sc, 'args) }
-         
         encode\"\"\"
-                {
-                  "value": [ -1, 0.1 ]
-                }
-        \"\"\"
+                 [ -1, 0.1 ]
+              \"\"\"
       """
     )
   }
 
   test("corrupted options parsing compile error") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[List[Option[Int]]]('sc, 'args) }
+
     compileErrors(
       """
-         case class Container(value: List[Option[Int]]) derives Codec.AsObject
-
-        extension (inline sc: StringContext)
-          inline def encode(inline args: Any*): Json =
-            ${ macros.encode[Container]('sc, 'args) }
-         
         encode\"\"\"
-                {
-                  "value": [ null, 42, "" ],
-                }
-        \"\"\"
+                  [ null, 42, "" ]
+              \"\"\"
       """
     )
   }
