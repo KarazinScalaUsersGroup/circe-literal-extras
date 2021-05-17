@@ -224,7 +224,7 @@ object macros:
           Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
     
         case '[Either[t, f]] =>
-          Json.fromFields((StringUnit, deconstructArgument[f]) :: Nil)
+          Json.fromFields(("Left", deconstructArgument[f]) :: Nil)
 
         case '[Some[t]] =>
           deconstructArgument[t]
