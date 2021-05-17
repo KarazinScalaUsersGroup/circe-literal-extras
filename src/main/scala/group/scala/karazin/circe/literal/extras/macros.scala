@@ -22,17 +22,18 @@ object macros:
     private val UnitUnit = JsonObject.empty
     private val BooleanUnit = true
 
-    private val LongUnit: Long = 0
-
-    private val DoubleUnit: Double = 0
-    private val FloatUnit: Float = 0
-
+    private val ByteUnit   = Byte.MaxValue
+    private val ShortUnit  = Short.MaxValue
+    private val IntUnit    = Int.MaxValue
+    private val LongUnit   = Long.MaxValue
+    private val FloatUnit  = Float.MaxValue
+    private val DoubleUnit = Double.MaxValue
+    
     private val CharUnit = ' '
     private val StringUnit = ""
 
-    private val BigIntUnit: BigInt = BigInt(0)
-
-    private val BigDecimalUnit: BigDecimal = BigDecimal(0)
+    private val BigIntUnit: BigInt = BigInt(Long.MaxValue) * 10
+    private val BigDecimalUnit: BigDecimal = BigDecimal(Double.MaxValue) * 10
 
     private val UUIDUnit = UUID.randomUUID
 
@@ -250,8 +251,16 @@ object macros:
         case '[Boolean] | '[java.lang.Boolean] =>
           Json.fromBoolean(BooleanUnit)
 
-        case '[Byte] | '[java.lang.Byte] | '[Short] | '[java.lang.Short] |
-             '[Int] | '[java.lang.Integer] |'[Long] | '[java.lang.Long]  =>
+        case '[Byte] | '[java.lang.Byte] =>
+          Json.fromInt(ByteUnit)
+    
+        case '[Short] | '[java.lang.Short] =>
+          Json.fromInt(ShortUnit)
+
+        case '[Int] | '[java.lang.Integer] =>
+          Json.fromInt(IntUnit)
+    
+        case '[Long] | '[java.lang.Long]  =>
           Json.fromLong(LongUnit)
 
         case '[Float] | '[java.lang.Float] =>
