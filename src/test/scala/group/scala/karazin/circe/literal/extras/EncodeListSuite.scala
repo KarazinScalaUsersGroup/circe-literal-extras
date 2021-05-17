@@ -34,7 +34,7 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined container object parsing") {
+  property("inlined nested lists parsing") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
@@ -112,7 +112,7 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("inlined list of Bar objects") {
+  property("inlined list of Primitive objects") {
 
     case class Primitive(value: Int) derives Codec.AsObject
     given Arbitrary[Primitive] = Arbitrary(Arbitrary.arbitrary[Int] map {v => Primitive(v)})
