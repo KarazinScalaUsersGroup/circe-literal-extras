@@ -8,41 +8,15 @@ import io.circe.parser
 import io.circe.{Json, JsonObject, Codec}
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
-/** !!! by default, scalacheck generates empty container in `forAll` !!! */
 class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
-  override def scalaCheckTestParameters =
-    super.scalaCheckTestParameters
-      .withMinSuccessfulTests(1)
-
-  def genIterableOf[T: Arbitrary] =
-    Gen.nonEmptyContainerOf[Iterable, T](Arbitrary.arbitrary[T])
-
-  property("inlined empty Iterable of Int values") {
+  property("inlined Iterable of Int values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Int]]('sc, 'args)}
 
     forAll { (intIterable: Iterable[Int]) =>
-
-      val result: Json = encode"${intIterable}"
-
-      val expected: Json = Json.arr()
-
-      assertEquals(result, expected)
-
-    }
-
-  }
-
-  property("inlined non-empty Iterable of Int values") {
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${macros.encode[Iterable[Int]]('sc, 'args)}
-
-    forAll(genIterableOf[Int]) { (intIterable: Iterable[Int]) =>
 
       val result: Json = encode"${intIterable}"
 
@@ -58,20 +32,21 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined non-empty Iterable of Option Int values") {
+  property("inlined Iterable of Option Int values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Option[Int]]]('sc, 'args)}
 
-    forAll(genIterableOf[Option[Int]]) { (intIterable: Iterable[Option[Int]]) =>
+    forAll { (intIterable: Iterable[Option[Int]]) =>
 
       val result: Json = encode"${intIterable}"
 
       val expected: Json = parser.parse(
         s"""
           [${intIterable.map(_.fold(Json.Null)(Json.fromInt(_))).mkString(",")}]
-        """).toOption.get
+        """
+      ).toOption.get
 
       assertEquals(result, expected)
 
@@ -79,10 +54,11 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined non-empty Iterable with None") {
+  property("inlined Iterable with None") {
 
     val genIterableWithNone =
-      genIterableOf[Option[Int]].retryUntil(_.exists(_.isEmpty))
+      Gen.nonEmptyContainerOf[Iterable, Option[Int]](Arbitrary.arbitrary[Option[Int]])
+        .retryUntil(_.forall(_.isEmpty))
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
@@ -92,7 +68,7 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
       val result: Json = encode"${intIterable}"
 
-      val expected: Json = Json.arr(Json.Null)
+      val expected: Json = Json.arr(List.fill(intIterable.size)(Json.Null): _*)
 
       assertEquals(result, expected)
 
@@ -100,7 +76,7 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined non-empty Iterable of primitives with Int values") {
+  property("inlined Iterable of primitives with Int values") {
 
     case class Primitive(value: Int) derives Codec.AsObject
 
@@ -110,7 +86,7 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Primitive]]('sc, 'args)}
 
-    forAll(genIterableOf[Primitive]) { (iterablePrimitives: Iterable[Primitive]) =>
+    forAll { (iterablePrimitives: Iterable[Primitive]) =>
 
       val jsonArrayPrimitives: Iterable[Json] = iterablePrimitives.map(_.asJson)
 
@@ -125,7 +101,7 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
   }
 
 
-  property("inlined non-empty Iterable of Option primitives") {
+  property("inlined Iterable of Option primitives") {
 
     case class Primitive(value: Int) derives Codec.AsObject
 
@@ -135,7 +111,7 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Option[Primitive]]]('sc, 'args)}
 
-    forAll(genIterableOf[Option[Primitive]]) { (optionIterable: Iterable[Option[Primitive]]) =>
+    forAll { (optionIterable: Iterable[Option[Primitive]]) =>
 
       val jsonObjectsArray: Iterable[Json] = optionIterable.map(_.asJson)
 
@@ -149,13 +125,13 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined non-empty Iterable of JsonObject values") {
+  property("inlined Iterable of JsonObject values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[JsonObject]]('sc, 'args)}
 
-    forAll(genIterableOf[JsonObject]) { (jsonObjectIterable: Iterable[JsonObject]) =>
+    forAll { (jsonObjectIterable: Iterable[JsonObject]) =>
 
       val jsonObjectsArray: Iterable[Json] = jsonObjectIterable.map(Json.fromJsonObject)
 
@@ -169,7 +145,7 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined non-empty Iterable of primitives with JsonObject values") {
+  property("inlined Iterable of primitives with JsonObject values") {
 
     case class Primitive(value: JsonObject) derives Codec.AsObject
 
@@ -177,9 +153,9 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Iterable[JsonObject]]('sc, 'args)}
+        ${macros.encode[Iterable[Primitive]]('sc, 'args)}
 
-    forAll(genIterableOf[JsonObject]) { (jsonObjectIterable: Iterable[JsonObject]) =>
+    forAll { (jsonObjectIterable: Iterable[Primitive]) =>
 
       val result: Json = encode"$jsonObjectIterable"
 
