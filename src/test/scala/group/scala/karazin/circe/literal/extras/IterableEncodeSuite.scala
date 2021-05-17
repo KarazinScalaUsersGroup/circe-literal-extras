@@ -66,11 +66,9 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
     forAll { (iterablePrimitives: Iterable[Primitive]) =>
 
-      val jsonArrayPrimitives: Iterable[Json] = iterablePrimitives.map(_.asJson)
-
       val result: Json = encode"${iterablePrimitives}"
 
-      val expected: Json = Json.fromValues(jsonArrayPrimitives)
+      val expected: Json = iterablePrimitives.asJson
 
       assertEquals(result, expected)
 
@@ -91,11 +89,9 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
     forAll { (optionIterable: Iterable[Option[Primitive]]) =>
 
-      val jsonObjectsArray: Iterable[Json] = optionIterable.map(_.asJson)
-
       val result: Json = encode"$optionIterable"
 
-      val expected: Json = Json.fromValues(jsonObjectsArray)
+      val expected: Json = optionIterable.asJson
 
       assertEquals(result, expected)
 
@@ -111,11 +107,9 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
     forAll { (jsonObjectIterable: Iterable[JsonObject]) =>
 
-      val jsonObjectsArray: Iterable[Json] = jsonObjectIterable.map(Json.fromJsonObject)
-
       val result: Json = encode"${jsonObjectIterable}"
 
-      val expected: Json = Json.fromValues(jsonObjectsArray)
+      val expected: Json = jsonObjectIterable.asJson
 
       assertEquals(result, expected)
 
