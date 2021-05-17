@@ -17,17 +17,9 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
     
     forAll { (value: List[Int]) =>
       
-      lazy val result: Json =
-        encode"""
-                ${value}
-            """
+      lazy val result: Json = encode"""$value"""
 
-      val expected: Json =
-        parser.parse(
-          s"""
-              [ ${value.map(_.toString) mkString ", "} ]
-             """
-        ).toOption.get
+      val expected: Json = value.asJson
       
       assertEquals(result, expected)
     }
@@ -42,22 +34,9 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
     forAll { (value: List[List[Int]]) =>
 
-      val result: Json =
-        encode"""
-                $value
-                """
+      val result: Json = encode"""$value"""
 
-      val expected =
-        parser.parse(
-          s"""
-             [ 
-                ${ value map {
-                    list => s""" [ ${list.map(_.toString) mkString ", "} ] """
-                  } mkString ", "
-                } 
-             ]
-             """
-        ).toOption.get
+      val expected = value.asJson
 
       assertEquals(result, expected)
     }
@@ -71,17 +50,9 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
     forAll { (options: List[Option[Int]]) =>
 
-      lazy val result: Json =
-        encode"""
-                $options
-                """
+      lazy val result: Json = encode"""$options"""
 
-      val expected =
-        parser.parse(
-          s"""
-              [ ${options.map(v => v.fold("null")(_.toString)) mkString ", "} ]
-              """
-        ).toOption.get
+      val expected = options.asJson
 
       assertEquals(result, expected)
 
@@ -96,17 +67,9 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
 
     forAll { (value: Iterable[Int]) =>
 
-      val result: Json =
-        encode"""
-                $value
-                """
+      val result: Json = encode"""$value"""
 
-      val expected =
-        parser.parse(
-          s"""
-             [ ${value.map(_.toString) mkString ", "} ]
-             """
-        ).toOption.get
+      val expected = value.asJson
 
       assertEquals(result, expected)
     }
@@ -123,53 +86,48 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
     
     forAll { (value: List[Primitive]) =>
 
-      val result: Json =
-        encode""" 
-                 $value
-                 """
+      val result: Json = encode"$value"
 
-      val expected =
-        parser.parse(
-          s"""
-              [ 
-                ${ value map {
-                    primitive => s"""{ "value": ${primitive.value} }"""
-                  } mkString ", "
-                }
-              ]
-              """
-        ).toOption.get
+      val expected = value.asJson
 
       assertEquals(result, expected)
     }
   }
 
   test("corrupted ints parsing compile error") {
-    
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[List[Int]]('sc, 'args) }
-        
-    compileErrors(
-      """
-        encode\"\"\"
-                 [ -1, 0.1 ]
-              \"\"\"
-      """
+    //TODO test doesn't work
+    assertNoDiff(
+      compileErrors(
+        """
+          import group.scala.karazin.circe.literal.extras.macros
+          
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[List[Int]]('sc, 'args) }
+           
+          encode"[ -1, null ]"
+        """
+      ),
+      """  """.stripMargin
     )
+    
   }
 
   test("corrupted options parsing compile error") {
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[List[Option[Int]]]('sc, 'args) }
-
-    compileErrors(
-      """
-        encode\"\"\"
-                  [ null, 42, "" ]
-              \"\"\"
-      """
+    //TODO test doesn't work
+    assertNoDiff(
+      compileErrors(
+        """
+          import group.scala.karazin.circe.literal.extras.macros
+          
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[List[Option[Int]]]('sc, 'args) }
+              
+          encode"[ null, 42, { } ]" 
+        """
+      ),
+      """  """.stripMargin
     )
+    
   }
