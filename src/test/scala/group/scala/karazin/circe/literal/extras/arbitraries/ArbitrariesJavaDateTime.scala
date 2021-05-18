@@ -23,7 +23,6 @@ trait ArbitrariesJavaDateTime {
     for {
       zone <- Gen.oneOf((ZoneId.getAvailableZoneIds).asScala)
     } yield ZoneId.of(zone)
-
   }
 
   val localDateGenerator: Gen[LocalDate] = Gen.choose(LocalDate.MIN, LocalDate.MAX)
@@ -57,8 +56,8 @@ trait ArbitrariesJavaDateTime {
     for {
       localDate <- Gen.choose(LocalDate.MIN, LocalDate.MAX)
       localTime <- Gen.choose(LocalTime.MIN, LocalTime.MAX)
-      zone      <- Gen.oneOf((ZoneId.getAvailableZoneIds).asScala)
-    } yield ZonedDateTime.of(localDate, localTime, ZoneId.of(zone))
+      zone      <- zoneIdGenerator
+    } yield ZonedDateTime.of(localDate, localTime, zone)
 
   val zoneOffsetGenerator: Gen[ZoneOffset] = Gen.choose(ZoneOffset.MIN, ZoneOffset.MAX)
 
