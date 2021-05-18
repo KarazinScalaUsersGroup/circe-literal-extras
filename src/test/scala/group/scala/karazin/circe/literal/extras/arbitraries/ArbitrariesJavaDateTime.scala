@@ -8,6 +8,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Prop._
 import io.circe.Encoder.encodeJsonObject
 import java.time._
+import scala.jdk.CollectionConverters._
 
 
 trait ArbitrariesJavaDateTime {
@@ -15,14 +16,15 @@ trait ArbitrariesJavaDateTime {
 
   val periodGenerator: Gen[Period] =
     for {
-      d <- Gen.posNum[Int]
-    } yield Period.ofDays(d)
+      day <- Gen.posNum[Int]
+    } yield Period.ofDays(day)
 
-  val zoneIdGenerator: Gen[ZoneId] =
+  val zoneIdGenerator: Gen[ZoneId] = {
     for {
-      s1 <- Gen.oneOf("GMT", "UTC", "UT", "");
-      s2 <- Gen.choose(0, 23)
-    } yield ZoneId.of(s1 + s2.toString)
+      zone <- Gen.oneOf((ZoneId.getAvailableZoneIds).asScala)
+    } yield ZoneId.of(zone)
+
+  }
 
   val localDateGenerator: Gen[LocalDate] = Gen.choose(LocalDate.MIN, LocalDate.MAX)
 
@@ -32,9 +34,9 @@ trait ArbitrariesJavaDateTime {
 
   val monthDayGenerator: Gen[MonthDay] =
     for {
-      m <- Gen.choose(0, 11)
-      d <- Gen.choose(1, LocalDate.of(2020, m, 1).getDayOfMonth)
-    } yield MonthDay.of(m, d)
+      month <- Gen.choose(0, 11)
+      day   <- Gen.choose(1, LocalDate.of(2020, month, 1).getDayOfMonth)
+    } yield MonthDay.of(month, day)
 
   val offsetTimeGenerator: Gen[OffsetTime] = Gen.choose(OffsetTime.MIN, OffsetTime.MAX)
 
@@ -42,23 +44,20 @@ trait ArbitrariesJavaDateTime {
 
   val yearGenerator: Gen[Year] =
     for {
-      y <- Gen.choose(Year.MIN_VALUE, Year.MAX_VALUE)
-    } yield Year.of(y)
+      year <- Gen.choose(Year.MIN_VALUE, Year.MAX_VALUE)
+    } yield Year.of(year)
 
   val yearMonthGenerator: Gen[YearMonth] =
     for {
-      y <- Gen.choose(Year.MIN_VALUE, Year.MAX_VALUE)
-      m <- Gen.choose(1, 12)
-    } yield YearMonth.of(y, m)
+      year  <- Gen.choose(Year.MIN_VALUE, Year.MAX_VALUE)
+      month <- Gen.choose(1, 12)
+    } yield YearMonth.of(year, month)
 
   val zonedDateTimeGenerator: Gen[ZonedDateTime] =
     for {
       localDate <- Gen.choose(LocalDate.MIN, LocalDate.MAX)
       localTime <- Gen.choose(LocalTime.MIN, LocalTime.MAX)
-      zone  <- Gen.oneOf("EST", "HST", "MST", "ACT", "AET", "AGT",
-        "ART", "AST", "BET", "BST", "CAT", "CNT", "CST", "CTT",
-        "EAT", "ECT", "IET", "IST", "JST", "MIT", "NET", "NST",
-        "PLT", "PNT", "PRT", "PST", "SST", "VST")
+      zone      <- Gen.oneOf((ZoneId.getAvailableZoneIds).asScala)
     } yield ZonedDateTime.of(localDate, localTime, ZoneId.of(zone))
 
   val zoneOffsetGenerator: Gen[ZoneOffset] = Gen.choose(ZoneOffset.MIN, ZoneOffset.MAX)
