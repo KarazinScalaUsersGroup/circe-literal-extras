@@ -56,7 +56,7 @@ object macros:
     private val ZoneOffsetUnit = java.time.ZoneOffset.MIN
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
-    
+
     private val EitherKeysUnit = ("Left", "8lGfXcH5MnclW6gCbKrbP4ANYOQiNI9GK5futmz1")
 
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
@@ -482,7 +482,7 @@ object macros:
 
         case '[Left[t, _]] =>
           cursor.keys match
-            case Some(keys) if keys.toList == List("Left") || keys.toList == EitherKeysUnit.toList => 
+            case Some(keys) if keys.toList == List("Left") || keys.toList == EitherKeysUnit.toList =>
               cursor.downField("Left").success match
                 case Some(cursor) => validateJsonSchema[t](key, cursor)
                 case _            => // impossible case
@@ -496,14 +496,14 @@ object macros:
             case _ => throw EncodeException(s"""Unexpected json type by key [$key].""")
 
         case '[Either[t, f]] =>
-          ScalaTry(validateJsonSchema[Left[t, f]]("Left", cursor)) match
+          ScalaTry(validateJsonSchema[Left[t, f]](s"$key.Left", cursor)) match
             case Success(_) => cursor.keys match
               case Some(keys) if keys.toList == EitherKeysUnit.toList =>
                 cursor.downField(EitherKeysUnit._2).success match
-                  case Some(cursor) => validateJsonSchema[f]("Right", cursor)
+                  case Some(cursor) => validateJsonSchema[f](s"$key.Right", cursor)
                   case _            => // impossible case
               case _ => // intentionally blank
-            case Failure(exc) => validateJsonSchema[Right[t, f]]("Right", cursor)
+            case Failure(exc) => validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
 
         case '[Validated[t, f]] =>
           ScalaTry(validateJsonSchema[t](key, cursor)) match
