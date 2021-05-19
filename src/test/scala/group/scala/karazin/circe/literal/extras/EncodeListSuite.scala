@@ -95,39 +95,29 @@ class EncodeListSuite extends munit.ScalaCheckSuite:
   }
 
   test("corrupted ints parsing compile error") {
-    //TODO test doesn't work
-    assertNoDiff(
-      compileErrors(
-        """
-          import group.scala.karazin.circe.literal.extras.macros
-          
+    scala.compiletime.testing.typeCheckErrors(
+      """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
               ${ macros.encode[List[Int]]('sc, 'args) }
            
           encode"[ -1, null ]"
         """
-      ),
-      """  """.stripMargin
-    )
-    
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
   }
 
   test("corrupted options parsing compile error") {
-    //TODO test doesn't work
-    assertNoDiff(
-      compileErrors(
-        """
-          import group.scala.karazin.circe.literal.extras.macros
-          
+    scala.compiletime.testing.typeCheckErrors(
+      """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
               ${ macros.encode[List[Option[Int]]]('sc, 'args) }
-              
+
           encode"[ null, 42, { } ]" 
-        """
-      ),
-      """  """.stripMargin
-    )
-    
+      """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
   }
