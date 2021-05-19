@@ -16,15 +16,11 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Int]]('sc, 'args)}
 
-    forAll { (intIterable: Iterable[Int]) =>
+    forAll { (iterable: Iterable[Int]) =>
 
-      val result: Json = encode"${intIterable}"
+      val result: Json = encode"${iterable}"
 
-      val expected: Json = parser.parse(
-        s"""
-          [${intIterable.mkString(",")}]
-        """
-      ).toOption.get
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -38,15 +34,11 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Option[Int]]]('sc, 'args)}
 
-    forAll { (intIterable: Iterable[Option[Int]]) =>
+    forAll { (iterable: Iterable[Option[Int]]) =>
 
-      val result: Json = encode"${intIterable}"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = parser.parse(
-        s"""
-          [${intIterable.map(_.fold(Json.Null)(Json.fromInt(_))).mkString(",")}]
-        """
-      ).toOption.get
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -64,11 +56,11 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Primitive]]('sc, 'args)}
 
-    forAll { (iterablePrimitives: Iterable[Primitive]) =>
+    forAll { (iterable: Iterable[Primitive]) =>
 
-      val result: Json = encode"${iterablePrimitives}"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = iterablePrimitives.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -87,11 +79,11 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Option[Primitive]]]('sc, 'args)}
 
-    forAll { (optionIterable: Iterable[Option[Primitive]]) =>
+    forAll { (iterable: Iterable[Option[Primitive]]) =>
 
-      val result: Json = encode"$optionIterable"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = optionIterable.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -105,11 +97,11 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[JsonObject]]('sc, 'args)}
 
-    forAll { (jsonObjectIterable: Iterable[JsonObject]) =>
+    forAll { (iterable: Iterable[JsonObject]) =>
 
-      val result: Json = encode"${jsonObjectIterable}"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = jsonObjectIterable.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -127,11 +119,11 @@ class IterableEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Iterable[Primitive]]('sc, 'args)}
 
-    forAll { (jsonObjectIterable: Iterable[Primitive]) =>
+    forAll { (iterable: Iterable[Primitive]) =>
 
-      val result: Json = encode"$jsonObjectIterable"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = jsonObjectIterable.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
