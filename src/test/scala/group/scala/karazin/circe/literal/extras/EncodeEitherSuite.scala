@@ -9,50 +9,6 @@ import org.scalacheck._
 
 class EncodeEitherSuite extends munit.ScalaCheckSuite:
 
-//  property("bug 1") {
-//    case class Bar(value: Int) derives Codec.AsObject
-//    given Arbitrary[Bar] = Arbitrary(Arbitrary.arbitrary[Int] map {v => Bar(v)})
-//
-//    extension (inline sc: StringContext)
-//      inline def encode(inline args: Any*): Json =
-//        ${ macros.encode[Bar]('sc, 'args) }
-//
-//    forAll { (value: Bar) =>
-//
-//      val result: Json =
-//        encode""" {
-//                    "value": 0,
-//                    "fg": 0
-//                  }
-//                  """
-//
-//
-//      val expected: Json = value.asJson
-//
-//      assertEquals(result, expected)
-//    }
-//
-//  }
-
-  
-  // TODO add this test as non-compiled
-//  property("bug 2 fixed") {
-//
-//    extension (inline sc: StringContext)
-//      inline def encode(inline args: Any*): Json =
-//        ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
-//
-//    forAll { (value: Either[Int, String]) =>
-//
-//      val result: Json = encode""" $value """
-//
-//      val expected: Json = value.asJson
-//
-//      assertEquals(result, expected)
-//    }
-//
-//  }
-
   property("inlined Either[Int, String] parsing") {
 
     extension (inline sc: StringContext)
@@ -131,4 +87,20 @@ class EncodeEitherSuite extends munit.ScalaCheckSuite:
       assertEquals(result, expected)
     }
 
+  }
+
+  test("corrupted Either.Right parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
+              
+          val value: Either[Option[Int], String] = Left(Some(3))
+           
+          encode""""" + """" $value """"" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
   }
