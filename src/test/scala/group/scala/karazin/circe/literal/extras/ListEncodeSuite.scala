@@ -7,7 +7,7 @@ import io.circe._
 import org.scalacheck.Prop._
 import org.scalacheck._
 
-class EncodeListSuite extends munit.ScalaCheckSuite:
+class ListEncodeSuite extends munit.ScalaCheckSuite:
   
   property("inlined list of ints") {
 
