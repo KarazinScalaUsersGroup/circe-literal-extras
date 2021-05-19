@@ -7,7 +7,7 @@ import io.circe.syntax._
 import org.scalacheck.Prop._
 import org.scalacheck._
 
-class EncodeEitherSuite extends munit.ScalaCheckSuite:
+class EitherEncodeSuite extends munit.ScalaCheckSuite:
 
   property("inlined Either[Int, String] parsing") {
 
@@ -89,7 +89,7 @@ class EncodeEitherSuite extends munit.ScalaCheckSuite:
 
   }
 
-  test("corrupted Either.Right parsing compile error") {
+  test("corrupted Either.Right type parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
           extension (inline sc: StringContext)
@@ -99,6 +99,61 @@ class EncodeEitherSuite extends munit.ScalaCheckSuite:
           val value: Either[Option[Int], String] = Left(Some(3))
            
           encode""""" + """" $value """"" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("corrupted Either with extra fields parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
+           
+          encode""""" + """" 
+              {
+                "Left": 0,
+                "extra": 0
+              } 
+              """"" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("corrupted Either.Right parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
+           
+          encode""""" + """" 
+              {
+                "Right": 0
+              } 
+              """"" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("corrupted Either parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
+          
+          val value: Either[List[String], Option[Int]] = ???
+           
+          encode""""" + """" 
+                  $value
+              """"" + """"
         """
     ).headOption match
       case Some(error) => assert(error.message.startsWith("Encode error:"))
