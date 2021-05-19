@@ -1346,26 +1346,23 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  // TODO add test as non-compile
-//  test("bug 1") {
-//    case class Bar(value: Int) derives Codec.AsObject
-//    given Arbitrary[Bar] = Arbitrary(Arbitrary.arbitrary[Int] map {v => Bar(v)})
-//
-//    extension (inline sc: StringContext)
-//      inline def encode(inline args: Any*): Json =
-//        ${ macros.encode[Bar]('sc, 'args) }
-//
-//    val result: Json =
-//      encode""" {
-//                    "value": 0,
-//                    "extra": 2
-//                 }
-//                 """
-//
-////    val result: Json =
-////      encode""" {
-////                    "value": 0,
-////                    "value": 2
-////                 }
-////                 """
-//  }
+  test("corrupted options parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+         import io.circe.{Json, JsonObject, Encoder, Codec}
+         
+         case class Bar(value: Int) derives Codec.AsObject
+         
+         extension (inline sc: StringContext)
+           inline def encode(inline args: Any*): Json =
+             ${ macros.encode[Bar]('sc, 'args) }
+              
+         encode""""" + """"{
+                    "value": 0,
+                    "extra": 2
+                 }""""" + """"
+      """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode warning:"))
+      case _           => fail("No compilation error was found.")
+  }
