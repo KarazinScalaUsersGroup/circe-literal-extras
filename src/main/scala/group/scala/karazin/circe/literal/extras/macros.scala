@@ -58,9 +58,6 @@ object macros:
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
 
-    // Attention! This is not a valid Either unit, but it is required for correct Either validation.
-    private val EitherUnitKeys = ("Left", "8lGfXcH5MnclW6gCbKrbP4ANYOQiNI9GK5futmz1")
-
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
 
@@ -221,8 +218,14 @@ object macros:
         case '[Option[t]] =>
           deconstructArgument[t]
 
+        case '[Left[t, f]] =>
+          Json.fromFields(("Left", deconstructArgument[t]) :: Nil)
+
+        case '[Right[t, f]] =>
+          Json.fromFields(("Right", deconstructArgument[f]) :: Nil)
+
         case '[Either[t, f]] =>
-          Json.fromFields((EitherUnitKeys._1, deconstructArgument[t]) :: (EitherUnitKeys._2, deconstructArgument[f]) :: Nil)
+          Json.fromFields(("Right", deconstructArgument[f]) :: Nil)
     
         case '[NonEmptyList[t]] =>
           Json.arr(deconstructArgument[t])
@@ -492,35 +495,31 @@ object macros:
           }
 
         case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
-          report.throwError(s"Macros does not yet support this type [${Type.show[tpe]}]")
+          throw EncodeError(s"Macros does not yet support this type [${Type.show[tpe]}]")
 
         case '[OneAnd[_, _]] =>
-          report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
+          throw EncodeError(s"Macros does not yet support this type cats.data.OneAnd")
 
         case '[Left[t, _]] =>
-          cursor.keys match
-            case Some(keys) if keys.toList == List("Left") || keys.toList == EitherUnitKeys.toList =>
-              cursor.downField("Left").success match
-                case Some(cursor) => validateJsonSchema[t](key, cursor)
-                case _            => // impossible case
-            case _ => throw EncodeError(s"""Unexpected json type by key [$key].""")
+          cursor.downField("Left").success match
+            case Some(cursor) => validateJsonSchema[t](key, cursor)
+            case _            => // impossible case
                 
         case '[Right[_, f]] =>
-          cursor.keys match
-            case Some(keys) if keys.toList == List("Right") => cursor.downField("Right").success match
-              case Some(cursor) => validateJsonSchema[f](key, cursor)
-              case _            => // impossible case
-            case _ => throw EncodeError(s"""Unexpected json type by key [$key].""")
+          cursor.downField("Right").success match
+            case Some(cursor) => validateJsonSchema[f](key, cursor)
+            case _            => // impossible case
 
         case '[Either[t, f]] =>
-          ScalaTry(validateJsonSchema[Left[t, f]](s"$key.Left", cursor)) match
-            case Success(_) => cursor.keys match
-              case Some(keys) if keys.toList == EitherUnitKeys.toList =>
-                cursor.downField(EitherUnitKeys._2).success match
-                  case Some(cursor) => validateJsonSchema[f](s"$key.Right", cursor)
-                  case _            => // impossible case
-              case _ => // intentionally blank
-            case Failure(exc) => validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
+          cursor.keys match
+            case Some(keys) if keys.size == 1 && keys.head == "Left" =>
+              validateJsonSchema[Left[t, f]](s"$key.Left", cursor)
+            case Some(keys) if keys.size == 1 && keys.head == "Right" =>
+              validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
+            case keys =>
+              throw EncodeError(
+                s"""Unexpected json type by key [$key]. Either Left or Right key are expected.
+                   |Actual keys are [${cursor.keys map { _ mkString ","}}]""".stripMargin)
 
         case '[Validated[t, f]] =>
           ScalaTry(validateJsonSchema[t](key, cursor)) match
