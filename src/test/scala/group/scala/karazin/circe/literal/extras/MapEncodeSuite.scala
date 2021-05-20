@@ -127,3 +127,59 @@ class MapEncodeSuite extends munit.ScalaCheckSuite:
     }
 
   }
+
+  test("corrupted ints parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Map[String, Int]]('sc, 'args) }
+
+          encode""""" + """"{ "key": { } }""""" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("corrupted options parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Map[String, Option[Int]]]('sc, 'args) }
+
+          encode""""" + """"{ "hello" : 42, "world": true }""""" + """"
+      """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("unexpected json structure error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Map[String, Int]]('sc, 'args) }
+
+          encode""""" + """"[ "hello", 42 ]""""" + """"
+      """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("incorrect key type compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Map[Int, String]]('sc, 'args) }
+
+          encode""""" + """"{ 42: "hello" }""""" + """"
+      """
+    ).headOption match
+      case Some(error) => assert(error.message.toLowerCase.startsWith("cannot prove json structure"))
+      case _           => fail("No compilation error was found.")
+  }
