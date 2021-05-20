@@ -527,30 +527,30 @@ object macros:
             case Failure(exc) => validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
 
         case '[Invalid[t]] =>
-          cursor.keys match
-            case Some(keys) if keys.toList == List("Invalid") || keys.toList == ValidatedUnitKeys.toList =>
-              cursor.downField("Invalid").success match
-                case Some(cursor) => validateJsonSchema[t](key, cursor)
-                case _            => // impossible case
-            case _ => throw EncodeError(s"""Unexpected json type by key [$key].""")
+          cursor.downField("Invalid").success match
+            case Some(cursor) => validateJsonSchema[t](key, cursor)
+            case _            => // impossible case
 
         case '[Valid[t]] =>
-          cursor.keys match
-            case Some(keys) if keys.toList == List("Valid") => 
-              cursor.downField("Valid").success match
-                case Some(cursor) => validateJsonSchema[t](key, cursor)
-                case _            => // impossible case
-            case _ => throw EncodeError(s"""Unexpected json type by key [$key].""")
+          cursor.downField("Valid").success match
+            case Some(cursor) => validateJsonSchema[t](key, cursor)
+            case _            => // impossible case
       
         case '[Validated[t, f]] =>
-          ScalaTry(validateJsonSchema[Invalid[t]](s"$key.Invalid", cursor)) match
-            case Success(_) => cursor.keys match
-              case Some(keys) if keys.toList == ValidatedUnitKeys.toList =>
-                cursor.downField(ValidatedUnitKeys._2).success match
-                  case Some(cursor) => validateJsonSchema[f](s"$key.Valid", cursor)
-                  case _            => // impossible case
-              case _ => // intentionally blank
-            case Failure(exc) => validateJsonSchema[Valid[f]](s"$key.Valid", cursor)
+          cursor.keys match
+            case Some(keys) if keys.size == 1 && keys.head == "Invalid" =>
+              validateJsonSchema[Invalid[t]](s"$key.Invalid", cursor)
+            case Some(keys) if keys.size == 1 && keys.head == "Valid" =>
+              validateJsonSchema[Valid[f]](s"$key.Valid", cursor)
+            case Some(keys) if keys.toList == ValidatedUnitKeys.toList =>
+              validateJsonSchema[Invalid[t]](s"$key.Invalid", cursor)
+              cursor.downField(ValidatedUnitKeys._2).success match
+                case Some(cursor) => validateJsonSchema[f](s"$key.Valid", cursor)
+                case _            => // impossible case
+            case keys =>
+              throw EncodeError(
+                s"""Unexpected json type by key [$key]. Validated Invalid or Valid key are expected.
+                   |Actual keys are [${cursor.keys map { _ mkString ","}}]""".stripMargin)
 
         case '[Some[t]] =>
           validateJsonSchema[t](key, cursor)
