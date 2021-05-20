@@ -55,11 +55,11 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
       inline def encode(inline args: Any*): Json =
         ${macros.encode[Chain[Primitive]]('sc, 'args)}
 
-    forAll { (Chain: Chain[Primitive]) =>
+    forAll { (chain: Chain[Primitive]) =>
 
-      val result: Json = encode"$Chain"
+      val result: Json = encode"$chain"
 
-      val expected: Json = Chain.asJson
+      val expected: Json = chain.asJson
 
       assertEquals(result, expected)
 
