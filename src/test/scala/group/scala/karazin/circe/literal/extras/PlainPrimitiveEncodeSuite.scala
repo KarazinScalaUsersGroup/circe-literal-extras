@@ -1536,8 +1536,6 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-
-
   property("inlined primitive with YearMonth value") {
 
     case class Primitive(value: YearMonth) derives Codec.AsObject
@@ -1593,6 +1591,27 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
       val primitive = Primitive(zoneOffset)
 
       val result: Json = JsonObject("value" -> zoneOffset.asJson).asJson
+
+      val expected: Json = encode"$primitive"
+
+      assertEquals(result, expected)
+    }
+
+  }
+
+  property("inlined primitive with Year value") {
+
+    case class Primitive(value: Year) derives Codec.AsObject
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        $ {macros.encode[Primitive]('sc, 'args)}
+
+    forAll { (year: Year) =>
+
+      val primitive = Primitive(year)
+
+      val result: Json = JsonObject("value" -> year.asJson).asJson
 
       val expected: Json = encode"$primitive"
 
