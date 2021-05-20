@@ -9,7 +9,7 @@ object Dependencies {
   }
   
   lazy val cats: Seq[ModuleID] = Seq(
-    "org.typelevel" %% "cats-laws",
+    "org.typelevel" %% "cats-laws"
   ).map(_ % Version.cats % "test" withSources() withJavadoc())
   
   lazy val circe: Seq[ModuleID] = Seq(
