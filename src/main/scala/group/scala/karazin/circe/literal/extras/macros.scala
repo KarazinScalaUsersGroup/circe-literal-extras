@@ -504,7 +504,7 @@ object macros:
           cursor.downField("Left").success match
             case Some(cursor) => validateJsonSchema[t](key, cursor)
             case _            => // impossible case
-                
+
         case '[Right[_, f]] =>
           cursor.downField("Right").success match
             case Some(cursor) => validateJsonSchema[f](key, cursor)
