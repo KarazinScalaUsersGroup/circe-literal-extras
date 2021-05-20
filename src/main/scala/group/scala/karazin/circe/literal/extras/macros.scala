@@ -4,6 +4,7 @@ import java.util.UUID
 
 import cats.implicits._
 import cats.data.{Chain, NonEmptyChain, NonEmptyList, NonEmptyMap, NonEmptySet, NonEmptyVector, OneAnd, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import io.circe.parser
 import io.circe.syntax._
 import io.circe.{Json, JsonObject, JsonNumber, Encoder, ACursor, HCursor}
@@ -57,6 +58,8 @@ object macros:
     private val ZoneOffsetUnit = java.time.ZoneOffset.MIN
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
+
+    private val ValidatedUnitKeys = ("Valid", "8lGfXcH5MnclW6gCbKrbP4ANYOQiNI9GK5futmz1")
 
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
@@ -240,7 +243,8 @@ object macros:
           Json.arr(deconstructArgument[t])
 
         case '[Validated[t, f]] =>
-          Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
+          // Attention! This is not a valid unit, but it is required for correct Validated validation.
+          Json.fromFields((ValidatedUnitKeys._1, deconstructArgument[t]) :: (ValidatedUnitKeys._2, deconstructArgument[f]) :: Nil)
 
         case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
           report.throwError(s"Macros does not yet support this type [${Type.show[tpe]}]")
@@ -500,11 +504,31 @@ object macros:
             case Failure(exc) => validateJsonSchema[f](key, cursor)
           }
 
+        case '[Valid[t]] =>
+          cursor.keys match
+            case Some(keys) if keys.toList == List("Valid") || keys.toList == ValidatedUnitKeys.toList =>
+              cursor.downField("Valid").success match
+                case Some(cursor) => validateJsonSchema[t](key, cursor)
+                case _            => // impossible case
+            case _ => throw EncodeError(s"""Unexpected json type by key [$key].""")
+
+        case '[Invalid[t]] =>
+          cursor.keys match
+            case Some(keys) if keys.toList == List("Invalid") => 
+              cursor.downField("Invalid").success match
+                case Some(cursor) => validateJsonSchema[t](key, cursor)
+                case _            => // impossible case
+            case _ => throw EncodeError(s"""Unexpected json type by key [$key].""")
+      
         case '[Validated[t, f]] =>
-          ScalaTry(validateJsonSchema[t](key, cursor)) match {
-            case Success(_)   => // intentionally blank
-            case Failure(exc) => validateJsonSchema[f](key, cursor)
-        }
+          ScalaTry(validateJsonSchema[Valid[f]](s"$key.Valid", cursor)) match
+            case Success(_) => cursor.keys match
+              case Some(keys) if keys.toList == ValidatedUnitKeys.toList =>
+                cursor.downField(ValidatedUnitKeys._2).success match
+                  case Some(cursor) => validateJsonSchema[f](s"$key.Invalid", cursor)
+                  case _            => // impossible case
+              case _ => // intentionally blank
+            case Failure(exc) => validateJsonSchema[Invalid[t]](s"$key.Invalid", cursor)
 
         case '[Some[t]] =>
           validateJsonSchema[t](key, cursor)
