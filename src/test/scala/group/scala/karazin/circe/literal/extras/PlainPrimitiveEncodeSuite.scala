@@ -1619,3 +1619,4 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
     }
 
   }
+
