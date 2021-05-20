@@ -169,17 +169,3 @@ class MapEncodeSuite extends munit.ScalaCheckSuite:
       case Some(error) => assert(error.message.startsWith("Encode error:"))
       case _           => fail("No compilation error was found.")
   }
-
-  test("incorrect key type compile error") {
-    scala.compiletime.testing.typeCheckErrors(
-      """
-          extension (inline sc: StringContext)
-            inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Map[Int, String]]('sc, 'args) }
-
-          encode""""" + """"{ 42: "hello" }""""" + """"
-      """
-    ).headOption match
-      case Some(error) => assert(error.message.toLowerCase.startsWith("cannot prove json structure"))
-      case _           => fail("No compilation error was found.")
-  }
