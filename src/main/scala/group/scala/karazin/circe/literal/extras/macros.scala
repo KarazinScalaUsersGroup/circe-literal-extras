@@ -388,7 +388,7 @@ object macros:
           cursor.keys match
             case Some(jsonKeys) => jsonKeys map { key =>
               if !keys.contains(key) then
-                throw EncodeWarning(s"""Unexpected json type by key [$keyPrefix]. Fields contain an extra field [$key].""")
+                throw EncodeWarning(s"""Excess json type by key [$keyPrefix]: an extra field [$key] is found.""")
             }
             case None => // intentionally blank
 
