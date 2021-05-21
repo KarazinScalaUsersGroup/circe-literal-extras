@@ -225,7 +225,7 @@ object macros:
           Json.fromFields(("Right", deconstructArgument[f]) :: Nil)
 
         case '[Either[t, f]] =>
-          Json.fromFields(("Left", deconstructArgument[t]) :: ("Right", deconstructArgument[f]) :: Nil)
+          Json.fromFields(("LeftInduced", deconstructArgument[t]) :: ("RightInduced", deconstructArgument[f]) :: Nil)
     
         case '[NonEmptyList[t]] =>
           Json.arr(deconstructArgument[t])
@@ -501,24 +501,20 @@ object macros:
           throw EncodeError(s"Macros does not yet support this type cats.data.OneAnd")
 
         case '[Left[t, _]] =>
-          cursor.downField("Left").success match
-            case Some(cursor) => validateJsonSchema[t](key, cursor)
-            case _            => // impossible case
+          validateJsonSchema[t](key, cursor.downField("Left").success.get)
 
         case '[Right[_, f]] =>
-          cursor.downField("Right").success match
-            case Some(cursor) => validateJsonSchema[f](key, cursor)
-            case _            => // impossible case
+          validateJsonSchema[f](key, cursor.downField("Right").success.get)
 
         case '[Either[t, f]] =>
           cursor.keys match
             case Some(keys) if keys.size == 1 && keys.head == "Left" =>
-              validateJsonSchema[Left[t, f]](s"$key.Left", cursor)
+              validateJsonSchema[t](s"$key.Left", cursor.downField("Left").success.get)
             case Some(keys) if keys.size == 1 && keys.head == "Right" =>
-              validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
-            case Some(keys) if keys.size == 2 && keys.head == "Left" && keys.last == "Right" =>
-              validateJsonSchema[Left[t, f]](s"$key.Left", cursor)
-              validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
+              validateJsonSchema[f](s"$key.Right", cursor.downField("Right").success.get)
+            case Some(keys) if keys.size == 2 && keys.head == "LeftInduced" && keys.last == "RightInduced" =>
+              validateJsonSchema[t](s"$key.LeftInduced", cursor.downField("LeftInduced").success.get)
+              validateJsonSchema[f](s"$key.RightInduced", cursor.downField("RightInduced").success.get)
             case keys =>
               throw EncodeError(
                 s"""Unexpected json type by key [$key]. Either Left or Right key are expected.
