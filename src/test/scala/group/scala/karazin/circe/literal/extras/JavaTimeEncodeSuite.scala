@@ -1,10 +1,10 @@
 package group.scala.karazin.circe.literal.extras
 
-import cats.implicits._
+//import cats.implicits._
 import io.circe.syntax._
-import io.circe.parser
+//import io.circe.parser
 import io.circe.{Json, JsonObject, Encoder, Codec}
-import org.scalacheck._
+//import org.scalacheck._
 import org.scalacheck.Prop._
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
