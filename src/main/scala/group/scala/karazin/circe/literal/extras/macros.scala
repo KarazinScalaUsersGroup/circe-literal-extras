@@ -67,7 +67,7 @@ object macros:
         case Varargs(argExprs) =>
           
           val jsonSchema = makeJsonSchema(getStringContextParts(sc), deconstructArguments(argExprs))
-          ScalaTry(validateJsonSchema("*", jsonSchema.hcursor)) match {
+          ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)) match {
             case Success(_) => // intentionally blank
 
             case Failure(EncodeError(error)) =>
@@ -225,7 +225,7 @@ object macros:
           Json.fromFields(("Right", deconstructArgument[f]) :: Nil)
 
         case '[Either[t, f]] =>
-          Json.fromFields(("Right", deconstructArgument[f]) :: Nil)
+          Json.fromFields(("Left", deconstructArgument[t]) :: ("Right", deconstructArgument[f]) :: Nil)
     
         case '[NonEmptyList[t]] =>
           Json.arr(deconstructArgument[t])
@@ -515,6 +515,9 @@ object macros:
             case Some(keys) if keys.size == 1 && keys.head == "Left" =>
               validateJsonSchema[Left[t, f]](s"$key.Left", cursor)
             case Some(keys) if keys.size == 1 && keys.head == "Right" =>
+              validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
+            case Some(keys) if keys.size == 2 && keys.head == "Left" && keys.last == "Right" =>
+              validateJsonSchema[Left[t, f]](s"$key.Left", cursor)
               validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
             case keys =>
               throw EncodeError(
