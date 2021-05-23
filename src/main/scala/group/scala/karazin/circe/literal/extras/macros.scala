@@ -16,8 +16,8 @@ object macros:
 
   object encode:
 
-    final case class EncodeException(message: String) extends Exception(message)
-
+    final case class EncodeError(message: String) extends Exception(message)
+    final case class EncodeWarning(message: String) extends Exception(message)
 
     private val UnitUnit = JsonObject.empty
     private val BooleanUnit = true
@@ -58,6 +58,9 @@ object macros:
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
 
+    // Attention! This is not a valid Either unit, but it is required for correct Either validation.
+    private val EitherUnitKeys = ("Left", "8lGfXcH5MnclW6gCbKrbP4ANYOQiNI9GK5futmz1")
+
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
 
@@ -70,8 +73,11 @@ object macros:
           ScalaTry(validateJsonSchema("*", jsonSchema.hcursor)) match {
             case Success(_) => // intentionally blank
 
-            case Failure(EncodeException(error)) =>
+            case Failure(EncodeError(error)) =>
               report.throwError(s"Encode error: [$error]")
+
+            case Failure(EncodeWarning(warning)) =>
+              report.warning(s"Encode warning: [$warning]")
 
             case Failure(error) =>
               report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
@@ -216,7 +222,7 @@ object macros:
           deconstructArgument[t]
 
         case '[Either[t, f]] =>
-          Json.fromFields((StringUnit, deconstructArgument[f]) :: Nil)
+          Json.fromFields((EitherUnitKeys._1, deconstructArgument[t]) :: (EitherUnitKeys._2, deconstructArgument[f]) :: Nil)
     
         case '[NonEmptyList[t]] =>
           Json.arr(deconstructArgument[t])
@@ -380,15 +386,24 @@ object macros:
               }
             ) =>
 
-          (deconstructProductFieldNames[elems] zip deconstructProductFieldTypes[tpes]) map {
+          val keys = deconstructProductFieldNames[elems]
+
+          cursor.keys match
+            case Some(jsonKeys) => jsonKeys map { key =>
+              if !keys.contains(key) then
+                throw EncodeWarning(s"""Excess json type by key [$keyPrefix]: an extra field [$key] is found.""")
+            }
+            case None => // intentionally blank
+
+          (keys zip deconstructProductFieldTypes[tpes]) map {
             case (key, '[Some[tpe]]) =>
               cursor.downField(key).success match
                 case Some(cursor) => validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
-                case None         => throw EncodeException(s"""Missing required key [${s"$keyPrefix.$key"}]""")
+                case None         => throw EncodeError(s"""Missing required key [${s"$keyPrefix.$key"}]""")
 
             case (key, '[None.type]) =>
               cursor.downField(key).success match
-                case Some(cursor) => throw EncodeException(s"""Unexpected json type by key [$key]. Null is expected""")
+                case Some(cursor) => throw EncodeError(s"""Unexpected json type by key [$key]. Null is expected""")
                 case None         => // intentionally blank
 
             case (key, '[Option[tpe]]) =>
@@ -400,11 +415,11 @@ object macros:
             case (key, '[tpe]) =>
               cursor.downField(key).success match
                 case Some(cursor) => validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
-                case None         => throw EncodeException(s"""Missing required key [${s"$keyPrefix.$key"}]""")
+                case None         => throw EncodeError(s"""Missing required key [${s"$keyPrefix.$key"}]""")
           }
     
         case expr =>
-          throw EncodeException(s"Macros implementation error. Unexpected expression. Required Some(Mirror.ProductOf[T]) but found [$expr]")
+          throw EncodeError(s"Macros implementation error. Unexpected expression. Required Some(Mirror.ProductOf[T]) but found [$expr]")
 
     end deconstructTypeSchemaProduct
     
@@ -438,7 +453,7 @@ object macros:
               case Some(cursor) => validateJsonSchema[t](key, cursor)
               case None         => // intentionally blank
           }
-    
+
         case '[Iterable[t]] =>
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
@@ -482,24 +497,42 @@ object macros:
         case '[OneAnd[_, _]] =>
           report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
 
+        case '[Left[t, _]] =>
+          cursor.keys match
+            case Some(keys) if keys.toList == List("Left") || keys.toList == EitherUnitKeys.toList =>
+              cursor.downField("Left").success match
+                case Some(cursor) => validateJsonSchema[t](key, cursor)
+                case _            => // impossible case
+            case _ => throw EncodeError(s"""Unexpected json type by key [$key].""")
+
+        case '[Right[_, f]] =>
+          cursor.keys match
+            case Some(keys) if keys.toList == List("Right") => cursor.downField("Right").success match
+              case Some(cursor) => validateJsonSchema[f](key, cursor)
+              case _            => // impossible case
+            case _ => throw EncodeError(s"""Unexpected json type by key [$key].""")
+
         case '[Either[t, f]] =>
-          ScalaTry(validateJsonSchema[t](key, cursor)) match {
-            case Success(_)   => // intentionally blank
-            case Failure(exc) => validateJsonSchema[f](key, cursor)
-          }
+          ScalaTry(validateJsonSchema[Left[t, f]](s"$key.Left", cursor)) match
+            case Success(_) => cursor.keys match
+              case Some(keys) if keys.toList == EitherUnitKeys.toList =>
+                cursor.downField(EitherUnitKeys._2).success match
+                  case Some(cursor) => validateJsonSchema[f](s"$key.Right", cursor)
+                  case _            => // impossible case
+              case _ => // intentionally blank
+            case Failure(exc) => validateJsonSchema[Right[t, f]](s"$key.Right", cursor)
 
         case '[Validated[t, f]] =>
-          ScalaTry(validateJsonSchema[t](key, cursor)) match {
+          ScalaTry(validateJsonSchema[t](key, cursor)) match
             case Success(_)   => // intentionally blank
             case Failure(exc) => validateJsonSchema[f](key, cursor)
-        }
 
         case '[Some[t]] =>
           validateJsonSchema[t](key, cursor)
 
         case '[None.type] =>
           if (!cursor.value.isNull)
-            throw EncodeException(s"""Unexpected json type by key [$key]. Null is expected""")
+            throw EncodeError(s"""Unexpected json type by key [$key]. Null is expected""")
 
         case '[Option[t]] =>
           if (!cursor.value.isNull)
@@ -529,14 +562,14 @@ object macros:
         case Some(json) if json.isArray =>
           cursor.values match
             case Some(values) if nonEmptyContainer && values.isEmpty =>
-              throw EncodeException(s"""Unexpected json type by key [$key]. Non-empty json array is expected""")
-            case Some(values) if uniqueValuesContainer && values.toSet.size != values.size =>
-              throw EncodeException(s"""Unexpected json type by key [$key]. Json array expected with different values""")
+              throw EncodeError(s"""Unexpected json type by key [$key]. Non-empty json array is expected""")
+            case Some(values) if uniqueValuesContainer && values.toSet.size == values.size =>
+              throw EncodeError(s"""Unexpected json type by key [$key]. Json array expected with different values""")
             case Some(values) =>
               values map f
             case None => // intentionally blank
-        case Some(json) => throw EncodeException(s"""Unexpected json type by key [$key]. Json array is expected""")
-        case None       => throw EncodeException(s"""Unexpected json type by key [$key]. Json array is expected""")
+        case Some(json) => throw EncodeError(s"""Unexpected json type by key [$key]. Json array is expected""")
+        case None       => throw EncodeError(s"""Unexpected json type by key [$key]. Json array is expected""")
 
     end validateJsonArray
 
@@ -546,14 +579,14 @@ object macros:
         case Some(json) if json.isObject =>
           cursor.keys match
             case Some(keys) if nonEmptyContainer && keys.isEmpty =>
-              throw EncodeException(s"""Unexpected json type by key [$key]. Non-empty json object is expected""")
-            case Some(keys) if keys.toSet.size != keys.size =>
-              throw EncodeException(s"""Unexpected json type by key [$key]. Json object expected with different keys""")
+              throw EncodeError(s"""Unexpected json type by key [$key]. Non-empty json object is expected""")
+            case Some(keys) if keys.toSet.size == keys.size =>
+              throw EncodeError(s"""Unexpected json type by key [$key]. Json object expected with different keys""")
             case Some(keys) =>
               keys map f
             case None => // intentionally blank
-        case Some(json) => throw EncodeException(s"""Unexpected json type by key [$key]. Json object is expected""")
-        case None       => throw EncodeException(s"""Unexpected json type by key [$key]. Json object is expected""")
+        case Some(json) => throw EncodeError(s"""Unexpected json type by key [$key]. Json object is expected""")
+        case None       => throw EncodeError(s"""Unexpected json type by key [$key]. Json object is expected""")
 
     end validateJsonObject
     
@@ -688,7 +721,7 @@ object macros:
         result match
           case Right(_)     => // intentionally blank
           case Left(error)  =>
-            throw EncodeException(s"The json does not satisfied to the schema: cannot treat [$key] field as [$primitiveType]. Underline error: [$error]")
+            throw EncodeError(s"The json does not satisfied to the schema: cannot treat [$key] field as [$primitiveType]. Underline error: [$error]")
       
       end handleError
     
