@@ -3,7 +3,7 @@ package group.scala.karazin.circe.literal.extras
 import java.util.UUID
 
 import cats.implicits._
-import cats.data.{Chain, NonEmptyChain, NonEmptyList, NonEmptyMap, NonEmptySet, NonEmptyVector, OneAnd, Validated}
+import cats.data.{Chain, NonEmptyList, NonEmptyVector, OneAnd, Validated}
 import io.circe.parser
 import io.circe.syntax._
 import io.circe.{Json, JsonObject, JsonNumber, Encoder, ACursor, HCursor}
@@ -247,16 +247,7 @@ object macros:
         case '[NonEmptyVector[t]] =>
           Json.arr(deconstructArgument[t])
 
-        case '[NonEmptySet[t]] =>
-          Json.arr(deconstructArgument[t])
-
-        case '[NonEmptyMap[f, t]] if deconstructArgument[f].isString =>
-          Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
-
         case '[Chain[t]] =>
-          Json.arr(deconstructArgument[t])
-    
-        case '[NonEmptyChain[t]] =>
           Json.arr(deconstructArgument[t])
 
         case '[Validated[t, f]] =>
@@ -373,9 +364,8 @@ object macros:
             s"java.time.ZoneId, java.time.LocalDate, java.time.LocalTime, java.time.LocalDateTime, java.time.MonthDay," +
             s"java.time.OffsetTime, java.time.OffsetDateTime,java.time.Year, java.time.YearMonth, java.time.ZonedDateTime," +
             s"java.time.ZoneOffset, java.util.Currency, List, Seq, Vector, Map, Set, Iterable, Option, Some, None, Either, " +
-            s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.NonEmptySet, cats.data.NonEmptyMap, " +
-            s"cats.data.Chain, cats.data.NonEmptyChain, cats.data.Validated, io.circe.Json, io.circe.JsonObject, " +
-            s"io.circe.JsonNumber, Product but found [${Type.show[tpe]}]")
+            s"cats.data.NonEmptyList, cats.data.NonEmptyVector, cats.data.Chain, cats.data.Validated, " +
+            s"io.circe.Json, io.circe.JsonObject, io.circe.JsonNumber, Product but found [${Type.show[tpe]}]")
 
     end deconstructArgument
     
@@ -460,7 +450,7 @@ object macros:
           }
     
         case '[Set[t]] =>
-          validateJsonArray(key, cursor, nonEmptyContainer = false, uniqueValuesContainer = true) { value =>
+          validateJsonArray(key, cursor, uniqueValuesContainer = true) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
 
@@ -492,23 +482,6 @@ object macros:
           }
 
         case '[NonEmptyVector[t]] =>
-          validateJsonArray(key, cursor, nonEmptyContainer = true) { value =>
-            validateJsonSchema[t](key, value.hcursor)
-          }
-
-        case '[NonEmptySet[t]] =>
-          validateJsonArray(key, cursor, nonEmptyContainer = true, uniqueValuesContainer = true) { value =>
-            validateJsonSchema[t](key, value.hcursor)
-          }
-
-        case '[NonEmptyMap[f, t]] =>
-          validateJsonObject(key, cursor, nonEmptyContainer = true) { key =>
-            cursor.downField(key).success match
-              case Some(cursor) => validateJsonSchema[t](key, cursor)
-              case None         => // intentionally blank
-          }
-
-        case '[NonEmptyChain[t]] =>
           validateJsonArray(key, cursor, nonEmptyContainer = true) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
