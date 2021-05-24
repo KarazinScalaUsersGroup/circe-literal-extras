@@ -4,7 +4,7 @@ Compile time literal json validator supporting inlined values based on type sche
 
 An extra module for JSON library for Scala [circe](https://github.com/circe/circe). Supported Scala versions include 3.0.0-RC3.
 
-# How to build
+# 🔨 How to build
 
 To be done
 
