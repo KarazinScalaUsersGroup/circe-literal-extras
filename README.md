@@ -188,7 +188,7 @@ val fooLikeInlinedJson: Json =
 ```
 
 # Supported types
-The macro supports the following primitive types:
+The macros supports the following primitive types:
 * Unit
 * Boolean
 * java.lang.Boolean 
@@ -227,7 +227,7 @@ The macro supports the following primitive types:
 * java.time.ZoneOffset
 * java.util.Currency
 
-The macro supports the following containers types:
+The macros supports the following containers types:
 * List
 * Seq
 * Vector
