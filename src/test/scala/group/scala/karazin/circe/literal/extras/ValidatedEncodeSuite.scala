@@ -144,6 +144,25 @@ class ValidatedEncodeSuite extends munit.ScalaCheckSuite:
       case _           => fail("No compilation error was found.")
   }
 
+  test("corrupted Validated with extra fields parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+            extension (inline sc: StringContext)
+              inline def encode(inline args: Any*): Json =
+                ${ macros.encode[Validated[Int, List[String]]]('sc, 'args) }
+
+            encode""""" + """" 
+                {
+                  "Invalid": 0,
+                  "Valid": [ ]
+                } 
+                """"" + """"
+          """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
   test("corrupted Validated.Valid parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
