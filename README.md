@@ -2,7 +2,7 @@
 
 Compile time literal json validator supporting inlined values based on type schema.
 
-An extra module for JSON library for Scala [circe](https://github.com/circe/circe). Supported Scala versions include 3.0.0-M3.
+An extra module for JSON library for Scala [circe](https://github.com/circe/circe). Supported Scala versions include 3.0.0-RC3.
 
 Here's a quick example of circe-literal-extras in action:
 
@@ -177,6 +177,11 @@ val fooLikeInlinedJson: Json =
             $fooLike
             """
 ```
+
+#👍 Contribute
+Contributions are welcome!
+
+If you want to say thank you, add a [GitHub Star](https://github.com/KarazinScalaUsersGroup/circe-literal-extras/stargazers) to the project.
 
 # License
 circe-literal-extras is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the "License"); you may not use this software except in compliance with the License.
