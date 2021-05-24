@@ -65,7 +65,6 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-
   property("inlined Vector of Option primitives") {
 
     case class Primitive(value: Int) derives Codec.AsObject
