@@ -9,76 +9,13 @@ import org.scalacheck.Prop._
 import scala.compiletime.testing.typeCheckErrors
 
 import group.scala.karazin.circe.literal.extras.model.{given, _}
-
-object EncodeSuite:
-
-  extension (inline sc: StringContext)
-
-    inline def encode(inline args: Any*): Json =
-      ${ macros.encode[Foo]('sc, 'args) }
-
-  object generators:
-
-    val genStr: Gen[String] = Gen.alphaStr
-
-    val genJsonObject: Gen[JsonObject] = for {
-      map <- Arbitrary.arbitrary[Map[String, String]]
-    } yield JsonObject.fromMap(map collect {
-      case (key, value) if key.nonEmpty => key -> Json.fromString(value)
-    })
-
-    val genBar: Gen[Bar] = for {
-      str   <- Arbitrary.arbitrary[String]
-      bool  <- Arbitrary.arbitrary[Boolean]
-    } yield Bar(str, bool, ())
-
-    val genBarLike: Gen[BarLike] = for {
-      str   <- Arbitrary.arbitrary[String]
-      bool  <- Arbitrary.arbitrary[Boolean]
-    } yield BarLike(str, bool, ())
-
-    val genBuzz: Gen[Buzz] = for {
-      int   <- Arbitrary.arbitrary[Int]
-      bool  <- Arbitrary.arbitrary[Boolean]
-      short  <- Arbitrary.arbitrary[Short]
-    } yield Buzz(int, bool, short)
-
-    val genBuzzLike: Gen[BuzzLike] = for {
-      int   <- Arbitrary.arbitrary[Int]
-      bool  <- Arbitrary.arbitrary[Boolean]
-      short  <- Arbitrary.arbitrary[Short]
-    } yield BuzzLike(int, bool, short)
-
-    val genFoo: Gen[Foo] = for {
-      int  <- Arbitrary.arbitrary[Int]
-      bar  <- Arbitrary.arbitrary[Option[Bar]]
-      buzz <- Arbitrary.arbitrary[List[Buzz]]
-      qux  <- Arbitrary.arbitrary[JsonObject]
-    } yield Foo(int, bar, buzz, qux)
-
-    val genFooLike: Gen[FooLike] = for {
-      int  <- Arbitrary.arbitrary[Int]
-      bar  <- Arbitrary.arbitrary[Bar]
-      buzz <- Arbitrary.arbitrary[List[Buzz]]
-      qux  <- Arbitrary.arbitrary[JsonObject]
-    } yield FooLike(int, bar, buzz, qux)
-
-    given Arbitrary[String] = Arbitrary(genStr)
-    given Arbitrary[JsonObject] = Arbitrary(genJsonObject)
-    given Arbitrary[Buzz] = Arbitrary(genBuzz)
-    given Arbitrary[BuzzLike] = Arbitrary(genBuzzLike)
-    given Arbitrary[Bar] = Arbitrary(genBar)
-    given Arbitrary[BarLike] = Arbitrary(genBarLike)
-    given Arbitrary[Foo] = Arbitrary(genFoo)
-    given Arbitrary[FooLike] = Arbitrary(genFooLike)
-
-  end generators
-
-end EncodeSuite
+import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class EncodeSuite extends munit.ScalaCheckSuite:
-  import EncodeSuite._
-  import EncodeSuite.generators.{given, _}
+
+  extension (inline sc: StringContext)
+    inline def encode(inline args: Any*): Json =
+      ${ macros.encode[Foo]('sc, 'args) }
 
   test("raw json parsing") {
 
