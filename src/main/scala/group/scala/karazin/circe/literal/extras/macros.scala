@@ -465,6 +465,13 @@ object macros:
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
+
+        case '[Map[f, t]] =>
+          validateJsonObject(key, cursor) { key =>
+            cursor.downField(key).success match
+              case Some(cursor) => validateJsonSchema[t](key, cursor)
+              case None         => // intentionally blank
+          }
     
         case '[Iterable[t]] =>
           validateJsonArray(key, cursor) { value =>
@@ -474,13 +481,6 @@ object macros:
         case '[Chain[t]] =>
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
-          }
-
-        case '[Map[f, t]] =>
-          validateJsonObject(key, cursor) { key =>
-            cursor.downField(key).success match
-              case Some(cursor) => validateJsonSchema[t](key, cursor)
-              case None         => // intentionally blank
           }
 
         case '[NonEmptyList[t]] =>
@@ -575,7 +575,7 @@ object macros:
           cursor.values match
             case Some(values) if nonEmptyContainer && values.isEmpty =>
               throw EncodeError(s"""Unexpected json type by key [$key]. Non-empty json array is expected""")
-            case Some(values) if uniqueValuesContainer && values.toSet.size == values.size =>
+            case Some(values) if uniqueValuesContainer && values.toSet.size != values.size =>
               throw EncodeError(s"""Unexpected json type by key [$key]. Json array expected with different values""")
             case Some(values) =>
               values map f
@@ -592,7 +592,7 @@ object macros:
           cursor.keys match
             case Some(keys) if nonEmptyContainer && keys.isEmpty =>
               throw EncodeError(s"""Unexpected json type by key [$key]. Non-empty json object is expected""")
-            case Some(keys) if keys.toSet.size == keys.size =>
+            case Some(keys) if keys.toSet.size != keys.size =>
               throw EncodeError(s"""Unexpected json type by key [$key]. Json object expected with different keys""")
             case Some(keys) =>
               keys map f
