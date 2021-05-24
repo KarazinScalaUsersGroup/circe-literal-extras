@@ -57,7 +57,7 @@ object macros:
     private val MonthDayUnit = java.time.MonthDay.of(1,1)
     private val OffsetTimeUnit = java.time.OffsetTime.MIN
     private val OffsetDateTimeUnit = java.time.OffsetDateTime.MIN
-    private val YearUnit = java.time.Year.of(0)
+    private val YearUnit = java.time.Year.now()
     private val YearMonthUnit = java.time.YearMonth.of(0,1)
     private val ZonedDateTimeUnit = java.time.ZonedDateTime.now()
     private val ZoneOffsetUnit = java.time.ZoneOffset.MIN

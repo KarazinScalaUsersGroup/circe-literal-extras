@@ -1350,13 +1350,13 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
     scala.compiletime.testing.typeCheckErrors(
       """
          import io.circe.{Json, JsonObject, Encoder, Codec}
-         
+
          case class Bar(value: Int) derives Codec.AsObject
-         
+
          extension (inline sc: StringContext)
            inline def encode(inline args: Any*): Json =
              ${ macros.encode[Bar]('sc, 'args) }
-              
+
          encode""""" + """"{
                     "value": 0,
                     "extra": 2
