@@ -33,15 +33,15 @@ class EitherEncodeSuite extends munit.ScalaCheckSuite:
         ${ macros.encode[Either[Int, String]]('sc, 'args) }
 
     forAll { (value: Int) =>
-      
+
       val either: Either[Int, String] = Left(value)
-      
+
       val result: Json =
         encode""" {
                     "Left": $value
                   }
                   """
-      
+
       val expected: Json = either.asJson
 
       assertEquals(result, expected)
@@ -89,15 +89,15 @@ class EitherEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  test("corrupted Either.Right type parsing compile error") {
+  test("corrupted Either.Left type passing Left parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
-              
-          val value: Either[Option[Int], String] = Left(Some(3))
-           
+              ${ macros.encode[Either[Int, String]]('sc, 'args) }
+
+          val value: Either[String, String] = Left("Hello world")
+
           encode""""" + """" $value """"" + """"
         """
     ).headOption match
@@ -105,54 +105,121 @@ class EitherEncodeSuite extends munit.ScalaCheckSuite:
       case _           => fail("No compilation error was found.")
   }
 
-  test("corrupted Either with extra fields parsing compile error") {
+  test("corrupted Either.Left type passing Right parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
-           
-          encode""""" + """" 
-              {
-                "Left": 0,
-                "extra": 0
-              } 
-              """"" + """"
+              ${ macros.encode[Either[Int, String]]('sc, 'args) }
+
+          val value: Either[String, String] = Right("Hello world")
+
+          encode""""" + """" $value """"" + """"
         """
     ).headOption match
       case Some(error) => assert(error.message.startsWith("Encode error:"))
       case _           => fail("No compilation error was found.")
   }
 
-  test("corrupted Either.Right parsing compile error") {
+  test("corrupted Either.Right type passing Left parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
-           
-          encode""""" + """" 
-              {
-                "Right": 0
-              } 
-              """"" + """"
+              ${ macros.encode[Either[Int, String]]('sc, 'args) }
+
+          val value: Either[Int, Int] = Left(42)
+
+          encode""""" + """" $value """"" + """"
         """
     ).headOption match
       case Some(error) => assert(error.message.startsWith("Encode error:"))
       case _           => fail("No compilation error was found.")
   }
 
+  test("corrupted Either.Right type passing Right parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Either[Int, String]]('sc, 'args) }
+
+          val value: Either[Int, Int] = Right(42)
+
+          encode""""" + """" $value """"" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
   test("corrupted Either parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
               ${ macros.encode[Either[Option[Int], List[String]]]('sc, 'args) }
-          
+
           val value: Either[List[String], Option[Int]] = ???
-           
-          encode""""" + """" 
+
+          encode""""" + """"
                   $value
+              """"" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("valid Either type passing Left and Right simultaniously parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Either[Int, String]]('sc, 'args) }
+
+          encode""""" + """"
+              {
+                "Left": 42,
+                "Right": "Hello world"
+              }
+              """"" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case v           => fail("No compilation error was found.")
+  }
+
+  test("valid Either type passing Left and extra field parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Either[Int, String]]('sc, 'args) }
+
+          encode""""" + """"
+              {
+                "Left": 42,
+                "extraKey": "extraValue"
+              }
+              """"" + """"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("valid Either type passing Right and extra field parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Either[Int, String]]('sc, 'args) }
+
+          encode""""" + """"
+              {
+                "Right": "Hello world",
+                "extraKey": "extraValue"
+              }
               """"" + """"
         """
     ).headOption match

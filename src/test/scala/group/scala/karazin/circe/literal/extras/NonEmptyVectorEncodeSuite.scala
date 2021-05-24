@@ -1,41 +1,44 @@
 package group.scala.karazin.circe.literal.extras
 
+import cats.implicits._
+import cats.data.NonEmptyVector
+import cats.laws.discipline.arbitrary._
 import io.circe._
 import io.circe.syntax._
-import org.scalacheck._
 import org.scalacheck.Prop._
+import org.scalacheck._
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
-class SeqEncodeSuite extends munit.ScalaCheckSuite:
+class NonEmptyVectorEncodeSuite extends munit.ScalaCheckSuite:
 
-  property("inlined Seq with Int values") {
+  property("inlined NonEmptyVector with Int values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Seq[Int]]('sc, 'args) }
+        ${ macros.encode[NonEmptyVector[Int]]('sc, 'args) }
 
-    forAll { (seq: Seq[Int]) =>
+    forAll { (vector: NonEmptyVector[Int]) =>
 
-      val result = encode"$seq"
+      val result = encode"$vector"
 
-      val expected = seq.asJson
+      val expected = vector.asJson
 
       assertEquals(result, expected)
 
     }
   }
 
-  property("inlined Seq of Option Int values") {
+  property("inlined NonEmptyVector of Option Int values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Seq[Option[Int]]]('sc, 'args)}
+        ${macros.encode[NonEmptyVector[Option[Int]]]('sc, 'args)}
 
-    forAll { (seq: Seq[Option[Int]]) =>
+    forAll { (vector: NonEmptyVector[Option[Int]]) =>
 
-      val result: Json = encode"$seq"
+      val result: Json = encode"$vector"
 
-      val expected: Json = seq.asJson
+      val expected: Json = vector.asJson
 
       assertEquals(result, expected)
 
@@ -43,7 +46,7 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Seq of primitives with Int values") {
+  property("inlined NonEmptyVector of primitives with Int values") {
 
     case class Primitive(value: Int) derives Codec.AsObject
 
@@ -51,13 +54,13 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Seq[Primitive]]('sc, 'args)}
+        ${macros.encode[NonEmptyVector[Primitive]]('sc, 'args)}
 
-    forAll { (Seq: Seq[Primitive]) =>
+    forAll { (vector: NonEmptyVector[Primitive]) =>
 
-      val result: Json = encode"$Seq"
+      val result: Json = encode"$vector"
 
-      val expected: Json = Seq.asJson
+      val expected: Json = vector.asJson
 
       assertEquals(result, expected)
 
@@ -65,7 +68,8 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Seq of Option primitives") {
+
+  property("inlined NonEmptyVector of Option primitives") {
 
     case class Primitive(value: Int) derives Codec.AsObject
 
@@ -73,13 +77,13 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Seq[Option[Primitive]]]('sc, 'args)}
+        ${macros.encode[NonEmptyVector[Option[Primitive]]]('sc, 'args)}
 
-    forAll { (seq: Seq[Option[Primitive]]) =>
+    forAll { (vector: NonEmptyVector[Option[Primitive]]) =>
 
-      val result: Json = encode"$seq"
+      val result: Json = encode"$vector"
 
-      val expected: Json = seq.asJson
+      val expected: Json = vector.asJson
 
       assertEquals(result, expected)
 
@@ -87,17 +91,17 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Seq of JsonObject values") {
+  property("inlined NonEmptyVector of JsonObject values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Seq[JsonObject]]('sc, 'args)}
+        ${macros.encode[NonEmptyVector[JsonObject]]('sc, 'args)}
 
-    forAll { (seq: Seq[JsonObject]) =>
+    forAll { (vector: NonEmptyVector[JsonObject]) =>
 
-      val result: Json = encode"$seq"
+      val result: Json = encode"$vector"
 
-      val expected: Json = seq.asJson
+      val expected: Json = vector.asJson
 
       assertEquals(result, expected)
 
@@ -105,7 +109,7 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Seq of primitives with JsonObject values") {
+  property("inlined NonEmptyVector of primitives with JsonObject values") {
 
     case class Primitive(value: JsonObject) derives Codec.AsObject
 
@@ -113,13 +117,13 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Seq[Primitive]]('sc, 'args)}
+        ${macros.encode[NonEmptyVector[Primitive]]('sc, 'args)}
 
-    forAll { (seq: Seq[Primitive]) =>
+    forAll { (vector: NonEmptyVector[Primitive]) =>
 
-      val result: Json = encode"$seq"
+      val result: Json = encode"$vector"
 
-      val expected: Json = seq.asJson
+      val expected: Json = vector.asJson
 
       assertEquals(result, expected)
 
@@ -127,12 +131,26 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
+  test("corrupted empty vector parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[NonEmptyVector[Int]]('sc, 'args) }
+
+          encode"[ ]"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
   test("corrupted ints parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Seq[Int]]('sc, 'args) }
+              ${ macros.encode[NonEmptyVector[Int]]('sc, 'args) }
 
           encode"[ -1, null ]"
         """
@@ -146,7 +164,7 @@ class SeqEncodeSuite extends munit.ScalaCheckSuite:
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Seq[Option[Int]]]('sc, 'args) }
+              ${ macros.encode[NonEmptyVector[Option[Int]]]('sc, 'args) }
           encode"[ null, 42, { } ]"
       """
     ).headOption match
