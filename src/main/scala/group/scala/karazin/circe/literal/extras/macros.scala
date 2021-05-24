@@ -16,6 +16,12 @@ object macros:
 
   object encode:
 
+    sealed trait FreshKey[T <: String]:
+      val value: String
+
+    final case class EitherLeftFreshKey(value: String) extends FreshKey["either-left-fresh-key"]
+    final case class EitherRightFreshKey(value: String) extends FreshKey["either-right-fresh-key"]
+
     final case class EncodeError(message: String) extends Exception(message)
     final case class EncodeWarning(message: String) extends Exception(message)
 
@@ -65,9 +71,15 @@ object macros:
 
       argsExpr match
         case Varargs(argExprs) =>
-          
-          val jsonSchema = makeJsonSchema(getStringContextParts(sc), deconstructArguments(argExprs))
-          ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)) match {
+
+          val stringContextParts = getStringContextParts(sc)
+
+          val eitherLeftFreshKey: EitherLeftFreshKey = EitherLeftFreshKey(generateFreshKey(stringContextParts))
+          val eitherRightFreshKey: EitherRightFreshKey = EitherRightFreshKey(generateFreshKey(stringContextParts))
+
+          val jsonSchema = makeJsonSchema(stringContextParts, deconstructArguments(eitherLeftFreshKey, eitherRightFreshKey)(argExprs))
+
+          ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using eitherLeftFreshKey, eitherRightFreshKey)) match {
             case Success(_) => // intentionally blank
 
             case Failure(EncodeError(error)) =>
@@ -158,7 +170,8 @@ object macros:
 
     end deconstructProductFieldTypes
     
-    def deconstructArgumentProduct[T: Type](using Quotes): List[(String, Json)] =
+    def deconstructArgumentProduct[T: Type](using eitherLeftFreshKey: EitherLeftFreshKey, eitherRightFreshKey: EitherRightFreshKey)
+                                           (using quotes: Quotes): List[(String, Json)] =
       import quotes.reflect._
 
       val mirrorTpe = Type.of[Mirror.Of[T]]
@@ -187,7 +200,8 @@ object macros:
 
     end deconstructArgumentProduct
     
-    def deconstructArgument[T: Type](using quotes: Quotes): Json =
+    def deconstructArgument[T: Type](using eitherLeftFreshKey: EitherLeftFreshKey, eitherRightFreshKey: EitherRightFreshKey)
+                                    (using quotes: Quotes): Json =
       import quotes.reflect._
       
       Type.of[T] match
@@ -225,7 +239,7 @@ object macros:
           Json.fromFields(("Right", deconstructArgument[f]) :: Nil)
 
         case '[Either[t, f]] =>
-          Json.fromFields(("LeftInduced", deconstructArgument[t]) :: ("RightInduced", deconstructArgument[f]) :: Nil)
+          Json.fromFields((eitherLeftFreshKey.value, deconstructArgument[t]) :: (eitherRightFreshKey.value, deconstructArgument[f]) :: Nil)
     
         case '[NonEmptyList[t]] =>
           Json.arr(deconstructArgument[t])
@@ -365,15 +379,18 @@ object macros:
 
     end deconstructArgument
     
-    def deconstructArguments(argExprs: Seq[Expr[Any]])(using quotes: Quotes): List[Json] =
+    def deconstructArguments(eitherLeftFreshKey: EitherLeftFreshKey, eitherRightFreshKey: EitherRightFreshKey)
+                            (argExprs: Seq[Expr[Any]])(using quotes: Quotes): List[Json] =
       
       argExprs.toList map { 
-        case '{ $arg: tpe } => deconstructArgument[tpe]
+        case '{ $arg: tpe } => deconstructArgument[tpe](using eitherLeftFreshKey, eitherRightFreshKey)
       }
       
     end deconstructArguments
       
-    def deconstructTypeSchemaProduct[T: Type](keyPrefix: String, cursor: ACursor)(using Quotes): Unit =
+    def deconstructTypeSchemaProduct[T: Type](keyPrefix: String, cursor: ACursor)
+                                             (using eitherLeftFreshKey: EitherLeftFreshKey, eitherRightFreshKey: EitherRightFreshKey)
+                                             (using Quotes): Unit =
       import quotes.reflect._
 
       val mirrorTpe = Type.of[Mirror.Of[T]]
@@ -426,7 +443,9 @@ object macros:
 
     end deconstructTypeSchemaProduct
     
-    def validateJsonSchema[T: Type](key: String, cursor: HCursor)(using Quotes): Unit =
+    def validateJsonSchema[T: Type](key: String, cursor: HCursor)
+                                   (using eitherLeftFreshKey: EitherLeftFreshKey, eitherRightFreshKey: EitherRightFreshKey)
+                                   (using quotes: Quotes): Unit =
       import quotes.reflect._
       
       Type.of[T] match
@@ -512,9 +531,9 @@ object macros:
               validateJsonSchema[t](s"$key.Left", cursor.downField("Left").success.get)
             case Some(keys) if keys.size == 1 && keys.head == "Right" =>
               validateJsonSchema[f](s"$key.Right", cursor.downField("Right").success.get)
-            case Some(keys) if keys.size == 2 && keys.head == "LeftInduced" && keys.last == "RightInduced" =>
-              validateJsonSchema[t](s"$key.LeftInduced", cursor.downField("LeftInduced").success.get)
-              validateJsonSchema[f](s"$key.RightInduced", cursor.downField("RightInduced").success.get)
+            case Some(keys) if keys.size == 2 && keys.head == eitherLeftFreshKey.value && keys.last == eitherRightFreshKey.value =>
+              validateJsonSchema[t](s"$key.${eitherLeftFreshKey.value}", cursor.downField(eitherLeftFreshKey.value).success.get)
+              validateJsonSchema[f](s"$key.${eitherRightFreshKey.value}", cursor.downField(eitherRightFreshKey.value).success.get)
             case keys =>
               throw EncodeError(
                 s"""Unexpected json type by key [$key]. Either Left or Right key are expected.
@@ -724,7 +743,13 @@ object macros:
       end handleError
     
     end validatePrimitives
-    
+
+    def generateFreshKey(stringContextParts: List[String]): String =
+      val key = UUID.randomUUID().toString
+      if stringContextParts exists { str => str contains key} then generateFreshKey(stringContextParts)
+      else key
+
+
   end encode
 
 end macros
