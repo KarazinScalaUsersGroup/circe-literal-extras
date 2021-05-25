@@ -8,7 +8,7 @@ An extra module for JSON library for Scala [circe](https://github.com/circe/circ
 
 To be done
 
-# Maven artifact
+# ⭐ Sonatype artifact
 
 To be done
 
@@ -187,7 +187,7 @@ val fooLikeInlinedJson: Json =
             """
 ```
 
-# Supported types
+# 🎯 Supported types
 The macros supports the following primitive types:
 * Unit
 * Boolean
@@ -227,7 +227,7 @@ The macros supports the following primitive types:
 * java.time.ZoneOffset
 * java.util.Currency
 
-The macros supports the following containers types:
+The macros supports the following container types:
 * List
 * Seq
 * Vector
@@ -256,10 +256,10 @@ Contributions are welcome!
 If you want to say thank you, add a [GitHub Star](https://github.com/KarazinScalaUsersGroup/circe-literal-extras/stargazers) to the project.
 
 # 📜 Contributors
-<img src="https://github.com/IgorWolkov.png" width="50"></img>
-![](https://github.com/mikhailZakharevich.png?size=50)
-![](https://github.com/VLADISLAV008.png?size=50)
-<img src="https://github.com/shvedchenkoM.png" width="50"></img>
+[<img src="https://github.com/IgorWolkov.png" width="50"></img>](https://github.com/IgorWolkov)
+[![](https://github.com/mikhailZakharevich.png?size=50)](https://github.com/mikhailZakharevich)
+[![](https://github.com/VLADISLAV008.png?size=50)](https://github.com/VLADISLAV008)
+[<img src="https://github.com/shvedchenkoM.png" width="50"></img>](https://github.com/shvedchenkoM)
 
 # ⚠ License
 circe-literal-extras is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0) (the "License"); you may not use this software except in compliance with the License.
