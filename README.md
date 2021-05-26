@@ -240,17 +240,14 @@ The macros supports the following container types:
 * Either
 * cats.data.NonEmptyList
 * cats.data.NonEmptyVector
-* cats.data.NonEmptySet
-* cats.data.NonEmptyMap
 * cats.data.Chain
-* cats.data.NonEmptyChain
 * cats.data.Validated
 * io.circe.Json
 * io.circe.JsonObject
 * io.circe.JsonNumber
 * Product
 
-#👍 Contribute
+# 👍 Contribute
 Contributions are welcome!
 
 If you want to say thank you, add a [GitHub Star](https://github.com/KarazinScalaUsersGroup/circe-literal-extras/stargazers) to the project.
