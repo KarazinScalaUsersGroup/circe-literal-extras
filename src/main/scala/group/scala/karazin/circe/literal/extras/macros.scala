@@ -361,6 +361,12 @@ object macros:
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])
+
+        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
+          TypeRepr.of[t].widen match
+            case OrType(typeRef, _) ⇒
+              typeRef.asType match
+                case '[f] ⇒ deconstructArgument[f]
       
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required " +
@@ -562,6 +568,16 @@ object macros:
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           deconstructTypeSchemaProduct[t](key, cursor)
+
+        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
+          TypeRepr.of[t].widen match
+            case OrType(typeRefLeft, typeRefRight) ⇒
+              ScalaTry(typeRefLeft.asType match
+                case '[f] ⇒ validateJsonSchema[f](key, cursor)
+              ) match
+                case Success(_) ⇒ // intentionally blank
+                case Failure(_) ⇒ typeRefRight.asType match
+                  case '[f] ⇒ validateJsonSchema[f](key, cursor)
 
         case '[unexpected] =>
           report.throwError(s"Macros implementation error. Unsupported type [${Type.show[unexpected]}]")
