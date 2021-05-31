@@ -27,17 +27,17 @@ trait UnionTypesArbitraries {
       case 0 ⇒ int
       case 1 ⇒ bool
 
-  given Arbitrary[Int | String] = Arbitrary(intOrString)
+  given intOrStringArbitrary: Arbitrary[Int | String] = Arbitrary(intOrString)
   
-//  given Arbitrary[Int | Boolean] = Arbitrary(intOrBoolean)
+  given intOrBooleanArbitrary: Arbitrary[Int | Boolean] = Arbitrary(intOrBoolean)
 
-  given Encoder[Int | String] = value => 
+  given intOrStringEncoder: Encoder[Int | String] = value =>
     value match
       case v: Int ⇒ v.toInt.asJson
       case v: String ⇒ v.toString.asJson
 
-//  given Encoder[Int | Boolean] = value =>
-//    value match
-//      case v: Int ⇒ v.toInt.asJson
-//      case v: Boolean ⇒ v.asJson
+  given intOrBooleanEncoder: Encoder[Int | Boolean] = value =>
+    value match
+      case v: Int ⇒ v.toInt.asJson
+      case v: Boolean ⇒ v.asJson
 }
