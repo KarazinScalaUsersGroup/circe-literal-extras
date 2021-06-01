@@ -20,9 +20,6 @@ object macros:
     sealed trait FreshKey[T <: String]:
       val value: String
 
-    final case class LeftFreshKey(value: String) extends FreshKey["left-fresh-key"]
-    final case class RightFreshKey(value: String) extends FreshKey["right-fresh-key"]
-    
     final case class CustomFreshKey(value: String) extends FreshKey["fresh-key"]
 
     final case class EncodeError(message: String) extends Exception(message)
@@ -76,14 +73,12 @@ object macros:
         case Varargs(argExprs) =>
 
           val stringContextParts = getStringContextParts(sc)
-
-          val leftFreshKey: LeftFreshKey = LeftFreshKey(generateFreshKey(stringContextParts))
-          val rightFreshKey: RightFreshKey = RightFreshKey(generateFreshKey(stringContextParts))
+          
           val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
 
-          val jsonSchema = makeJsonSchema(stringContextParts, deconstructArguments(leftFreshKey, rightFreshKey, freshKey)(argExprs))
+          val jsonSchema = makeJsonSchema(stringContextParts, deconstructArguments(freshKey)(argExprs))
 
-          ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using leftFreshKey, rightFreshKey, freshKey)) match {
+          ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using freshKey)) match {
             case Success(_) => // intentionally blank
 
             case Failure(EncodeError(error)) =>
@@ -174,7 +169,7 @@ object macros:
 
     end deconstructProductFieldTypes
     
-    def deconstructArgumentProduct[T: Type](using leftFreshKey: LeftFreshKey, rightFreshKey: RightFreshKey, freshKey: CustomFreshKey)
+    def deconstructArgumentProduct[T: Type](using freshKey: CustomFreshKey)
                                            (using quotes: Quotes): List[(String, Json)] =
       import quotes.reflect._
 
@@ -204,8 +199,7 @@ object macros:
 
     end deconstructArgumentProduct
     
-    def deconstructArgument[T: Type](using leftFreshKey: LeftFreshKey, rightFreshKey: RightFreshKey, freshKey: CustomFreshKey)
-                                    (using quotes: Quotes): Json =
+    def deconstructArgument[T: Type](using freshKey: CustomFreshKey)(using quotes: Quotes): Json =
       import quotes.reflect._
       
       Type.of[T] match
@@ -243,7 +237,7 @@ object macros:
           Json.fromFields(("Right", deconstructArgument[f]) :: Nil)
 
         case '[Either[t, f]] =>
-          Json.fromFields((leftFreshKey.value, deconstructArgument[t]) :: (rightFreshKey.value, deconstructArgument[f]) :: Nil)
+          Json.fromFields((freshKey.value, Json.arr(deconstructArgument[t], deconstructArgument[f])) :: Nil)
     
         case '[NonEmptyList[t]] =>
           Json.arr(deconstructArgument[t])
@@ -261,7 +255,7 @@ object macros:
           Json.fromFields(("Valid", deconstructArgument[t]) :: Nil)
 
         case '[Validated[t, f]] =>
-          Json.fromFields((leftFreshKey.value, deconstructArgument[t]) :: (rightFreshKey.value, deconstructArgument[f]) :: Nil)
+          Json.fromFields((freshKey.value, Json.arr(deconstructArgument[t], deconstructArgument[f])) :: Nil)
 
         case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
           report.throwError(s"Macros does not yet support this type [${Type.show[tpe]}]")
@@ -367,7 +361,7 @@ object macros:
 
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
-              
+
             case OrType(typeRefLeft @ OrType(_, _), typeRefRight) ⇒
               (typeRefLeft.asType, typeRefRight.asType) match
                 case ('[f], '[t]) ⇒ deconstructArgument[f].hcursor.downField(freshKey.value).focus match
@@ -375,11 +369,11 @@ object macros:
                     Json.fromFields((freshKey.value, Json.fromValues(array :+ deconstructArgument[t])) :: Nil)
                   }.get
                   case _ ⇒ throw EncodeError(s"Unexpected union type: expected `OrType` got [${Type.show[f]}]")
-                    
+
             case OrType(typeRefLeft, typeRefRight) ⇒
               (typeRefLeft.asType, typeRefRight.asType) match
                 case ('[f], '[t])  =>
-                  Json.fromFields((freshKey.value, Json.arr(deconstructArgument[f], deconstructArgument[t])) :: Nil)        
+                  Json.fromFields((freshKey.value, Json.arr(deconstructArgument[f], deconstructArgument[t])) :: Nil)
       
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required " +
@@ -395,17 +389,15 @@ object macros:
 
     end deconstructArgument
     
-    def deconstructArguments(leftFreshKey: LeftFreshKey, rightFreshKey: RightFreshKey, freshKey: CustomFreshKey)
-                            (argExprs: Seq[Expr[Any]])(using quotes: Quotes): List[Json] =
+    def deconstructArguments(freshKey: CustomFreshKey)(argExprs: Seq[Expr[Any]])(using quotes: Quotes): List[Json] =
       
       argExprs.toList map { 
-        case '{ $arg: tpe } => deconstructArgument[tpe](using leftFreshKey, rightFreshKey, freshKey: CustomFreshKey)
+        case '{ $arg: tpe } => deconstructArgument[tpe](using freshKey: CustomFreshKey)
       }
       
     end deconstructArguments
       
-    def deconstructTypeSchemaProduct[T: Type](keyPrefix: String, cursor: ACursor)
-                                             (using leftFreshKey: LeftFreshKey, rightFreshKey: RightFreshKey, freshKey: CustomFreshKey)
+    def deconstructTypeSchemaProduct[T: Type](keyPrefix: String, cursor: ACursor) (using freshKey: CustomFreshKey)
                                              (using Quotes): Unit =
       import quotes.reflect._
 
@@ -459,8 +451,7 @@ object macros:
 
     end deconstructTypeSchemaProduct
     
-    def validateJsonSchema[T: Type](key: String, cursor: HCursor)
-                                   (using leftFreshKey: LeftFreshKey, rightFreshKey: RightFreshKey, freshKey: CustomFreshKey)
+    def validateJsonSchema[T: Type](key: String, cursor: HCursor) (using freshKey: CustomFreshKey)
                                    (using quotes: Quotes): Unit =
       import quotes.reflect._
       
@@ -530,13 +521,15 @@ object macros:
               validateJsonSchema[t](s"$key.Left", cursor.downField("Left").success.get)
             case Some(keys) if keys.size == 1 && keys.head == "Right" =>
               validateJsonSchema[f](s"$key.Right", cursor.downField("Right").success.get)
-            case Some(keys) if keys.size == 2 && keys.head == leftFreshKey.value && keys.last == rightFreshKey.value =>
-              validateJsonSchema[t](s"$key.${leftFreshKey.value}", cursor.downField(leftFreshKey.value).success.get)
-              validateJsonSchema[f](s"$key.${rightFreshKey.value}", cursor.downField(rightFreshKey.value).success.get)
-            case keys =>
-              throw EncodeError(
-                s"""Unexpected json type by key [$key]. Either Left or Right key are expected.
-                   |Actual keys are [${cursor.keys map { _ mkString ","}}]""".stripMargin)
+            case Some(keys) if keys.size == 1 && keys.head == freshKey.value =>
+              cursor.downField(freshKey.value).values.get.toList match
+                case left :: right :: Nil ⇒
+                  validateJsonSchema[t](s"$key.Left", left.hcursor)
+                  validateJsonSchema[f](s"$key.Right", right.hcursor)
+                case _ ⇒ // imposible case
+            case keys ⇒ throw EncodeError(
+              s"""Unexpected json type by key [$key]. Either Left or Right key are expected.
+                 |Actual keys are [${cursor.keys map { _ mkString ","}}]""".stripMargin)
 
         case '[Invalid[t]] =>
           validateJsonSchema[t](key, cursor.downField("Invalid").success.get)
@@ -550,9 +543,12 @@ object macros:
               validateJsonSchema[t](s"$key.Invalid", cursor.downField("Invalid").success.get)
             case Some(keys) if keys.size == 1 && keys.head == "Valid" =>
               validateJsonSchema[f](s"$key.Valid", cursor.downField("Valid").success.get)
-            case Some(keys) if keys.size == 2 && keys.head == leftFreshKey.value && keys.last == rightFreshKey.value =>
-              validateJsonSchema[t](s"$key.${leftFreshKey.value}", cursor.downField(leftFreshKey.value).success.get)
-              validateJsonSchema[f](s"$key.${rightFreshKey.value}", cursor.downField(rightFreshKey.value).success.get)
+            case Some(keys) if keys.size == 1 && keys.head == freshKey.value =>
+              cursor.downField(freshKey.value).values.get.toList match
+                case invalid :: valid :: Nil ⇒
+                  validateJsonSchema[t](s"$key.Invalid", invalid.hcursor)
+                  validateJsonSchema[f](s"$key.Valid", valid.hcursor)
+                case _ ⇒ // imposible case  
             case keys =>
               throw EncodeError(
                 s"""Unexpected json type by key [$key]. Validated Invalid or Valid key are expected.
@@ -600,12 +596,12 @@ object macros:
                       }) match
                         case Success(_) ⇒ // intentionally blank
                         case Failure(_) ⇒ throw EncodeError(s"""Unexpected json type by key [$key]. The type must be [${Type.show[t]}]""")
-        
+
         case '[unexpected] =>
           report.throwError(s"Macros implementation error. Unsupported type [${Type.show[unexpected]}]")
 
     end validateJsonSchema
-    
+
     def validateCustomFreshUnit(key: String, cursor: HCursor)(f: Json => Any)(using freshKey: CustomFreshKey): Unit =
       cursor.keys match
         case Some(keys) if keys.size == 1 && keys.head == freshKey.value =>
