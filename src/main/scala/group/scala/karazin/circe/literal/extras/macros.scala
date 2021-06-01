@@ -585,12 +585,12 @@ object macros:
                     case Success(_) ⇒ // intentionally blank
                     case Failure(_) ⇒
                       cursor.focus match
-                        case Some(json) if json.isArray =>
+                        case Some(json) if json.isArray ⇒
                           cursor.values match
                             case Some(values) => values map { value ⇒
                               validateJsonSchema[t](key, value.hcursor)
                             }
-                            case _ ⇒ // 
+                            case _ ⇒ throw EncodeError(s"""Unexpected json type by key [$key]. The type must be [${Type.show[t]}]""")
                         case _ => throw EncodeError(s"""Unexpected json type by key [$key]. The type must be [${Type.show[t]}]""")
     
         case '[unexpected] =>

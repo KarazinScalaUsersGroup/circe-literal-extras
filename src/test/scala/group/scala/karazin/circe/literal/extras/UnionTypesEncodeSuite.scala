@@ -152,9 +152,9 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
               ${ macros.encode[Int | String]('sc, 'args) }
-          
+
           val value: Int | Boolean = 0
-          
+
           encode"$value"
         """
     ).headOption match
@@ -189,4 +189,22 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
     ).headOption match
       case Some(error) => assert(error.message.startsWith("Encode error:"))
       case _           => fail("No compilation error was found.")
+  }
+
+
+  property("inlined Boolean parsing value") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Int | String | Boolean]('sc, 'args) }
+
+    forAll { (value: Boolean) =>
+
+      val result = encode"[0]"
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+
+    }
   }
