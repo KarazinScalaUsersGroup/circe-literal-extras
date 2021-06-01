@@ -96,7 +96,90 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  test("corrupted ints parsing compile error") {
+  property("inlined Int parsing value") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Int | String | Boolean]('sc, 'args) }
+
+    forAll { (value: Int) =>
+
+      val result = encode"$value"
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+
+    }
+  }
+
+  property("inlined String parsing value") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Int | String | Boolean]('sc, 'args) }
+
+    forAll { (value: String) =>
+
+      val result = encode"$value"
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+
+    }
+  }
+
+  property("inlined Boolean parsing value") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Int | String | Boolean]('sc, 'args) }
+
+    forAll { (value: Boolean) =>
+
+      val result = encode"$value"
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+
+    }
+  }
+
+  property("inlined String parsing value") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[Int | String | Boolean]('sc, 'args) }
+
+    forAll { (value: Boolean) =>
+
+      val result = encode"$value"
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+
+    }
+  }
+
+  test("corrupted double parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Int | String | Boolean]('sc, 'args) }
+
+          encode"0.1"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+
+  test("corrupted boolean parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
           extension (inline sc: StringContext)

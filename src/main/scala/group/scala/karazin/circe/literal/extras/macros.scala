@@ -206,6 +206,9 @@ object macros:
       import quotes.reflect._
       
       Type.of[T] match
+        case '[t] =>
+          report.throwError(s"[${Type.show[t]}]")
+          
         case '[List[t]] =>
           Json.arr(deconstructArgument[t])
 
@@ -362,11 +365,13 @@ object macros:
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])
 
-        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
-          TypeRepr.of[t].widen match
-            case OrType(typeRef, _) ⇒
-              typeRef.asType match
-                case '[f] ⇒ deconstructArgument[f]
+//        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
+//          report.throwError(s"${TypeRepr.of[t].widen}")
+//          TypeRepr.of[t].widen match
+//            case OrType(typeRefLeft, typeRefRight) ⇒
+//              (typeRefLeft.asType, typeRefRight.asType) match
+//                case ('[f], '[t]) ⇒ 
+//                  Json.fromValues(deconstructArgument[f].asArray.get :+ deconstructArgument[t])
       
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required " +
@@ -555,7 +560,18 @@ object macros:
         case '[Option[t]] =>
           if (!cursor.value.isNull)
             validateJsonSchema[t](key, cursor)
-
+            
+//        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
+//          report.throwError(s"[${TypeRepr.of[t].widen}]")
+//          TypeRepr.of[t].widen match
+//            case OrType(typeRefLeft, typeRefRight) ⇒
+//              ScalaTry(typeRefRight.asType match
+//                case '[f] ⇒ validateJsonSchema[f](key, cursor)
+//              ) match
+//                case Success(_) ⇒ // intentionally blank
+//                case Failure(_) ⇒ typeRefLeft.asType match
+//                  case '[f] ⇒ validateJsonSchema[f](key, cursor)
+    
         case  '[Unit] | '[Boolean] | '[java.lang.Boolean] | '[Byte] | '[java.lang.Byte] | '[Short]  | '[java.lang.Short] |
               '[Int] | '[java.lang.Integer] | '[Long] | '[java.lang.Long] | '[Float]  | '[java.lang.Float] |
               '[Double] | '[java.lang.Double] | '[Char] | '[java.lang.Character] | '[String] | '[BigInt] |
@@ -568,16 +584,6 @@ object macros:
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           deconstructTypeSchemaProduct[t](key, cursor)
-
-        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
-          TypeRepr.of[t].widen match
-            case OrType(typeRefLeft, typeRefRight) ⇒
-              ScalaTry(typeRefLeft.asType match
-                case '[f] ⇒ validateJsonSchema[f](key, cursor)
-              ) match
-                case Success(_) ⇒ // intentionally blank
-                case Failure(_) ⇒ typeRefRight.asType match
-                  case '[f] ⇒ validateJsonSchema[f](key, cursor)
 
         case '[unexpected] =>
           report.throwError(s"Macros implementation error. Unsupported type [${Type.show[unexpected]}]")

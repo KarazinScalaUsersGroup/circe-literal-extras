@@ -28,7 +28,7 @@ trait UnionTypesArbitraries {
       case 1 ⇒ bool
 
   given intOrStringArbitrary: Arbitrary[Int | String] = Arbitrary(intOrString)
-  
+
   given intOrBooleanArbitrary: Arbitrary[Int | Boolean] = Arbitrary(intOrBoolean)
 
   given intOrStringEncoder: Encoder[Int | String] = value =>
