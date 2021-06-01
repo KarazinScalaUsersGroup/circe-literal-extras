@@ -191,20 +191,30 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
       case _           => fail("No compilation error was found.")
   }
 
+  test("corrupted array parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Int | String]('sc, 'args) }
 
-  property("inlined Boolean parsing value") {
+          encode"[0]"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
 
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Int | String | Boolean]('sc, 'args) }
+  test("corrupted array parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Int | Boolean]('sc, 'args) }
 
-    forAll { (value: Boolean) =>
-
-      val result = encode"[0]"
-
-      val expected: Json = value.asJson
-
-      assertEquals(result, expected)
-
-    }
+          encode"[0, true]"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
   }
