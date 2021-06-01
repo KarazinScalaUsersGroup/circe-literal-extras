@@ -78,24 +78,6 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("inlined Int | Boolean value compile error") {
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Int | String]('sc, 'args) }
-
-    forAll { (value: Int | Boolean) =>
-      
-      //TODO must fail on compile time
-      val result = encode"$value"
-
-      val expected: Json = value.asJson
-
-      assertEquals(result, expected)
-
-    }
-  }
-
   property("inlined Int parsing value") {
 
     extension (inline sc: StringContext)
@@ -162,6 +144,22 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
       assertEquals(result, expected)
 
     }
+  }
+
+  test("corrupted Int | Boolean parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Int | String]('sc, 'args) }
+          
+          val value: Int | Boolean = 0
+          
+          encode"$value"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
   }
 
   test("corrupted double parsing compile error") {
