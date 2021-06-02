@@ -242,10 +242,13 @@ The macros supports the following container types:
 * cats.data.NonEmptyVector
 * cats.data.Chain
 * cats.data.Validated
+
+Also the macro supports:
+* Product
+* Union types
 * io.circe.Json
 * io.circe.JsonObject
 * io.circe.JsonNumber
-* Product
 
 # 👍 Contribute
 Contributions are welcome!
