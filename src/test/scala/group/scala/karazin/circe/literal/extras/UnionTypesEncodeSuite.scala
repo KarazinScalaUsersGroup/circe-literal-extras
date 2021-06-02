@@ -146,6 +146,47 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
+  property("inlined Union of List[List[Int]] and Option[String] parsing value") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[List[List[Int]] | Option[String]]('sc, 'args) }
+
+    forAll { (valueLists: List[List[Int]], valueOption: Option[String]) =>
+
+      val resultLists = encode"$valueLists"
+      val resultOption = encode"$valueOption"
+
+      val expectedList: Json = valueLists.asJson
+      val expectedOption: Json = valueOption.asJson
+
+      assertEquals(resultLists, expectedList)
+      assertEquals(resultOption, expectedOption)
+
+    }
+
+  }
+
+  property("inlined Union List[Option[Int]] and Option[List[Int]] parsing value") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[List[Option[Int]] | Option[List[Int]]]('sc, 'args) }
+
+    forAll { (valueListOpt: List[Option[Int]], valueOptList: Option[List[Int]]) =>
+
+      val resultListOpt = encode"$valueListOpt"
+      val resultOptList = encode"$valueOptList"
+
+      val expectedListOpt: Json = resultListOpt.asJson
+      val expectedOptList: Json = resultOptList.asJson
+
+      assertEquals(resultListOpt, expectedListOpt)
+      assertEquals(resultOptList, expectedOptList)
+
+    }
+  }
+
   test("corrupted Int | Boolean parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
@@ -176,6 +217,19 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
       case _           => fail("No compilation error was found.")
   }
 
+  test("type not present in Union compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Option[String] | String | Boolean]('sc, 'args) }
+
+          encode"1"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
 
   test("corrupted boolean parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
