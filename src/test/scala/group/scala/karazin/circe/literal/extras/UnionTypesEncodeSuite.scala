@@ -44,6 +44,23 @@ class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
+  property("inlined List of Union types") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${ macros.encode[List[Int | String]]('sc, 'args) }
+
+    forAll { (value: List[Int | String]) =>
+
+      val result = encode"$value"
+
+      val expected: Json = value.asJson
+
+      assertEquals(result, expected)
+
+    }
+  }
+
   property("inlined Int value") {
 
     extension (inline sc: StringContext)
