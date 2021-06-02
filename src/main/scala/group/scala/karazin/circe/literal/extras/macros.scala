@@ -462,13 +462,9 @@ object macros:
               cursor.focus match {
                 case Some(json) if json.isString && (json.asString.get == constant.value) =>
 
-                case Some(json) if json.isNumber && json.asNumber.get.toShort.isDefined && (json.asNumber.get.toShort.get == constant.value) =>
-
                 case Some(json) if json.isNumber && json.asNumber.get.toInt.isDefined && (json.asNumber.get.toInt.get == constant.value) =>
 
                 case Some(json) if json.isNumber && json.asNumber.get.toLong.isDefined && (json.asNumber.get.toLong.get == constant.value) =>
-
-                case Some(json) if json.isNumber && (json.asNumber.get.toFloat == constant.value) =>
 
                 case Some(json) if json.isNumber && (json.asNumber.get.toDouble == constant.value) =>
 
