@@ -459,37 +459,24 @@ object macros:
         case '[tp] if s"${TypeRepr.of[tp].dealias}".startsWith("ConstantType") =>
           TypeRepr.of[tp].dealias match
             case ct @ ConstantType(constant) =>
-              (cursor.focus, constant.value) match {
-                case (Some(json), v : String) if json.isString =>
-                  if (json.asString.get == constant.value) then ()
-                  else report.throwError(s"Literal type mismatch: json value is [$json] constant value is [$v]")
+              cursor.focus match {
+                case Some(json) if json.isString && (json.asString.get == constant.value) =>
 
-                case (Some(json), v : Short) if json.isNumber && json.asNumber.get.toShort.isDefined =>
-                  if (json.asNumber.get.toShort.get == constant.value) then ()
-                  else report.throwError(s"Literal type mismatch: json value is [$json] constant value is [$v]")
+                case Some(json)
+                  if json.isNumber && json.asNumber.get.toShort.isDefined && (json.asNumber.get.toShort.get == constant.value) =>
 
-                case (Some(json), v : Int) if json.isNumber && json.asNumber.get.toInt.isDefined =>
-                  if (json.asNumber.get.toInt.get == constant.value) then ()
-                  else report.throwError(s"Literal type mismatch: json value is [$json] constant value is [$v]")
+                case Some(json) if json.isNumber && json.asNumber.get.toInt.isDefined && (json.asNumber.get.toInt.get == constant.value) =>
 
-                case (Some(json), v : Long) if json.isNumber && json.asNumber.get.toLong.isDefined =>
-                  if (json.asNumber.get.toLong.get == constant.value) then ()
-                  else report.throwError(s"Literal type mismatch: json value is [$json] constant value is [$v]")
+                case Some(json) if json.isNumber && json.asNumber.get.toLong.isDefined && (json.asNumber.get.toLong.get == constant.value) =>
 
-                case (Some(json), v : Float) if json.isNumber =>
-                  if (json.asNumber.get.toFloat == constant.value) then ()
-                  else report.throwError(s"Literal type mismatch: json value is [$json] constant value is [$v]")
+                case Some(json) if json.isNumber && (json.asNumber.get.toFloat == constant.value) =>
 
-                case (Some(json), v : Double) if json.isNumber =>
-                  if (json.asNumber.get.toDouble == constant.value) then ()
-                  else report.throwError(s"Literal type mismatch: json value is [$json] constant value is [$v]")
+                case Some(json) if json.isNumber && (json.asNumber.get.toDouble == constant.value) =>
 
-                case (Some(json), v : Boolean) if json.isBoolean && json.asBoolean.isDefined =>
-                  if (json.asBoolean.get == constant.value) then ()
-                  else report.throwError(s"Literal type mismatch: json value is [$json] constant value is [$v]")
+                case Some(json) if json.isBoolean && json.asBoolean.isDefined && (json.asBoolean.get == constant.value) =>
 
-                case (maybeJson, v) =>
-                  report.throwError(s"Literal type match error: json value is [$maybeJson] constant value is [$v]")
+                case maybeJson =>
+                  report.throwError(s"Literal type match error: json value is [$maybeJson] constant value is [${constant.value}]")
               }
 
         case '[List[t]] => 
