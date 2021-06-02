@@ -291,7 +291,6 @@ object macros:
           Json.fromString(CharUnit.toString)
 
         case '[String] =>
-//          report.throwError(s"error! ${TypeRepr.of[T].dealias}")
           Json.fromString(StringUnit)
 
         case '[BigInt] | '[java.math.BigInteger] =>
