@@ -85,25 +85,25 @@ object macros:
 
       import quotes.reflect._
 
-          val stringContextParts: List[String] = getStringContextParts(sc)
+      val stringContextParts: List[String] = getStringContextParts(sc)
 
-          val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
+      val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
 
-          val jsonSchema: Json = makeJsonSchema(stringContextParts, deconstructArguments(freshKey)(argExprs))
+      val jsonSchema: Json = makeJsonSchema(stringContextParts, deconstructArguments(freshKey)(argsExprs))
 
-          ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using freshKey)) match {
-            case Success(_) => // intentionally blank
+      ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using freshKey)) match {
+        case Success(_) => // intentionally blank
 
-            case Failure(EncodeError(error)) =>
-              report.throwError(s"Encode error: [$error]")
+        case Failure(EncodeError(error)) =>
+          report.throwError(s"Encode error: [$error]")
   
-            case Failure(EncodeWarning(warning)) =>
-              report.warning(s"Encode warning: [$warning]")
+        case Failure(EncodeWarning(warning)) =>
+          report.warning(s"Encode warning: [$warning]")
   
-            case Failure(error) =>
-              report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
-          }
-          makeJson(sc, argsExprs)
+        case Failure(error) =>
+          report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
+      }
+      makeJson(sc, argsExprs)
 
     end apply
 
