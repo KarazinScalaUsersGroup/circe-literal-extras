@@ -4,8 +4,8 @@ object Dependencies {
 
   object Version {
     val cats  = "2.6.0"
-    val circe = "0.14.0-M6"
-    val munit = "0.7.25"
+    val circe = "0.14.1"
+    val munit = "0.7.26"
   }
   
   lazy val cats: Seq[ModuleID] = Seq(

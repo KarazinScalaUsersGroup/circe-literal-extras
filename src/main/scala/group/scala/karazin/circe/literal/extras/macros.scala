@@ -64,39 +64,49 @@ object macros:
     private val ZoneOffsetUnit = java.time.ZoneOffset.MIN
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
-    
+
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
+                (using tpe: Type[T], quotes: Quotes): Expr[Json] =
+      import quotes.reflect._
+
+      argsExpr match
+        case Varargs(argExprs)  => apply[T](sc, argExprs)
+        case unexpected         => report.throwError(s"Expected Varargs got [$unexpected]")
+
+    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]], extraArgsExpr: Expr[Seq[Any]])
+                (using tpe: Type[T], quotes: Quotes): Expr[Json] =
+      import quotes.reflect._
+
+      (argsExpr, extraArgsExpr) match
+        case (Varargs(argExprs), Varargs(extraArgsExprs)) => apply[T](sc, argExprs ++ extraArgsExprs)
+        case unexpected                                   => report.throwError(s"Expected Varargs got [$unexpected]")
+
+    def apply[T](sc: Expr[StringContext], argsExprs: Seq[Expr[Any]])
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
 
       import quotes.reflect._
 
-      argsExpr match
-        case Varargs(argExprs) =>
+        val stringContextParts: List[String] = getStringContextParts(sc)
 
-          val stringContextParts = getStringContextParts(sc)
+        val leftFreshKey: LeftFreshKey = LeftFreshKey(generateFreshKey(stringContextParts))
+        val rightFreshKey: RightFreshKey = RightFreshKey(generateFreshKey(stringContextParts))
 
-          val leftFreshKey: LeftFreshKey = LeftFreshKey(generateFreshKey(stringContextParts))
-          val rightFreshKey: RightFreshKey = RightFreshKey(generateFreshKey(stringContextParts))
+        val jsonSchema: Json = makeJsonSchema(stringContextParts, deconstructArguments(leftFreshKey, rightFreshKey)(argsExprs))
 
-          val jsonSchema = makeJsonSchema(stringContextParts, deconstructArguments(leftFreshKey, rightFreshKey)(argExprs))
+        ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using leftFreshKey, rightFreshKey)) match {
+          case Success(_) => // intentionally blank
 
-          ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using leftFreshKey, rightFreshKey)) match {
-            case Success(_) => // intentionally blank
+          case Failure(EncodeError(error)) =>
+            report.throwError(s"Encode error: [$error]")
 
-            case Failure(EncodeError(error)) =>
-              report.throwError(s"Encode error: [$error]")
+          case Failure(EncodeWarning(warning)) =>
+            report.warning(s"Encode warning: [$warning]")
 
-            case Failure(EncodeWarning(warning)) =>
-              report.warning(s"Encode warning: [$warning]")
+          case Failure(error) =>
+            report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
+        }
+        makeJson(sc, argsExprs)
 
-            case Failure(error) =>
-              report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
-          }
-          makeJson(sc, argExprs)
-
-        case unexpected =>
-           report.throwError(s"Expected Varargs got [$unexpected]")
-    
     end apply
 
     def makeJson(sc: Expr[StringContext], argExprs: Seq[Expr[Any]])(using quotes: Quotes): Expr[Json] =
