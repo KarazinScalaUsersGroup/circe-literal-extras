@@ -263,6 +263,32 @@ object macros:
         case '[OneAnd[_, _]] =>
           report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
 
+        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("ConstantType") =>
+          TypeRepr.of[t].widen match
+            case ConstantType(constant) => constant.value match
+              case v: Int    ⇒ Json.fromInt(v)
+              case v: Long    ⇒ Json.fromLong(v)
+              case v: Double  ⇒ Json.fromDoubleOrNull(v)
+              case v: String  ⇒ Json.fromString(v)
+              case v: Boolean ⇒ Json.fromBoolean(v)
+              case _ ⇒ report.throwError(s"Macros does not yet support this type [${Type.show[t]}]")  
+
+        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
+          TypeRepr.of[t].widen match
+      
+            case OrType(typeLeft @ OrType(_, _), typeRight) ⇒
+              (typeLeft.asType, typeRight.asType) match
+                case ('[f], '[t]) ⇒ deconstructArgument[f].hcursor.downField(freshKey.value).focus match
+                  case Some(json) if json.isArray ⇒ json.asArray.map { array =>
+                    Json.fromFields((freshKey.value, Json.fromValues(array :+ deconstructArgument[t])) :: Nil)
+                  }.get
+                  case _ ⇒ throw EncodeError(s"Unexpected union type: expected `OrType` got [${Type.show[f]}]")
+      
+            case OrType(typeLeft, typeRight) ⇒
+              (typeLeft.asType, typeRight.asType) match
+                case ('[f], '[t])  =>
+                  Json.fromFields((freshKey.value, Json.arr(deconstructArgument[f], deconstructArgument[t])) :: Nil)
+
         case '[Unit] =>
           Json.fromJsonObject(UnitUnit)
     
@@ -358,22 +384,6 @@ object macros:
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])
-
-        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
-          TypeRepr.of[t].widen match
-
-            case OrType(typeRefLeft @ OrType(_, _), typeRefRight) ⇒
-              (typeRefLeft.asType, typeRefRight.asType) match
-                case ('[f], '[t]) ⇒ deconstructArgument[f].hcursor.downField(freshKey.value).focus match
-                  case Some(json) if json.isArray ⇒ json.asArray.map { array =>
-                    Json.fromFields((freshKey.value, Json.fromValues(array :+ deconstructArgument[t])) :: Nil)
-                  }.get
-                  case _ ⇒ throw EncodeError(s"Unexpected union type: expected `OrType` got [${Type.show[f]}]")
-
-            case OrType(typeRefLeft, typeRefRight) ⇒
-              (typeRefLeft.asType, typeRefRight.asType) match
-                case ('[f], '[t])  =>
-                  Json.fromFields((freshKey.value, Json.arr(deconstructArgument[f], deconstructArgument[t])) :: Nil)
       
         case '[tpe] =>
           report.throwError(s"Macros implementation error. Unsupported type. Required " +
@@ -458,7 +468,7 @@ object macros:
       Type.of[T] match
         case '[tp] if s"${TypeRepr.of[tp].dealias}".startsWith("ConstantType") =>
           TypeRepr.of[tp].dealias match
-            case ct @ ConstantType(constant) =>
+            case ConstantType(constant) =>
               cursor.focus match {
                 case Some(json) if json.isString && (json.asString.get == constant.value) =>
 
@@ -582,7 +592,26 @@ object macros:
         case '[Option[t]] =>
           if (!cursor.value.isNull)
             validateJsonSchema[t](key, cursor)
-    
+        
+        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
+          TypeRepr.of[t].widen match
+            case OrType(typeLeft, typeRight) ⇒
+              ScalaTry( typeRight.asType match
+                case '[f] ⇒ validateJsonSchema[f](key, cursor)
+              ) match
+                case Success(_) ⇒ // intentionally blank
+                case Failure(_) ⇒
+                  ScalaTry( typeLeft.asType match
+                    case '[f] ⇒ validateJsonSchema[f](key, cursor)
+                  ) match
+                    case Success(_) ⇒ // intentionally blank
+                    case Failure(_) ⇒
+                      ScalaTry( validateCustomFreshUnit(key, cursor) { value ⇒
+                        validateJsonSchema[t](key, value.hcursor)
+                      }) match
+                        case Success(_) ⇒ // intentionally blank
+                        case Failure(_) ⇒ throw EncodeError(s"""Unexpected json type by key [$key]. The type must be [${Type.show[t]}]""")
+
         case  '[Unit] | '[Boolean] | '[java.lang.Boolean] | '[Byte] | '[java.lang.Byte] | '[Short]  | '[java.lang.Short] |
               '[Int] | '[java.lang.Integer] | '[Long] | '[java.lang.Long] | '[Float]  | '[java.lang.Float] |
               '[Double] | '[java.lang.Double] | '[Char] | '[java.lang.Character] | '[String] | '[BigInt] |
@@ -595,25 +624,6 @@ object macros:
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           deconstructTypeSchemaProduct[t](key, cursor)
-
-        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
-          TypeRepr.of[t].widen match
-            case OrType(typeRefLeft, typeRefRight) ⇒
-              ScalaTry( typeRefRight.asType match
-                case '[f] ⇒ validateJsonSchema[f](key, cursor)
-              ) match
-                case Success(_) ⇒ // intentionally blank
-                case Failure(_) ⇒
-                  ScalaTry( typeRefLeft.asType match
-                    case '[f] ⇒ validateJsonSchema[f](key, cursor)
-                  ) match
-                    case Success(_) ⇒ // intentionally blank
-                    case Failure(_) ⇒
-                      ScalaTry( validateCustomFreshUnit(key, cursor) { value ⇒
-                          validateJsonSchema[t](key, value.hcursor)
-                      }) match
-                        case Success(_) ⇒ // intentionally blank
-                        case Failure(_) ⇒ throw EncodeError(s"""Unexpected json type by key [$key]. The type must be [${Type.show[t]}]""")
 
         case '[unexpected] =>
           report.throwError(s"Macros implementation error. Unsupported type [${Type.show[unexpected]}]")
