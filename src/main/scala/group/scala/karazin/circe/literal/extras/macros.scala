@@ -263,16 +263,6 @@ object macros:
         case '[OneAnd[_, _]] =>
           report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
 
-        case '[t] if s"${TypeRepr.of[t].widen}".startsWith("ConstantType") =>
-          TypeRepr.of[t].widen match
-            case ConstantType(constant) => constant.value match
-              case v: Int    ⇒ Json.fromInt(v)
-              case v: Long    ⇒ Json.fromLong(v)
-              case v: Double  ⇒ Json.fromDoubleOrNull(v)
-              case v: String  ⇒ Json.fromString(v)
-              case v: Boolean ⇒ Json.fromBoolean(v)
-              case _ ⇒ report.throwError(s"Macros does not yet support this type [${Type.show[t]}]")  
-
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
       
@@ -466,24 +456,6 @@ object macros:
       import quotes.reflect._
       
       Type.of[T] match
-        case '[tp] if s"${TypeRepr.of[tp].dealias}".startsWith("ConstantType") =>
-          TypeRepr.of[tp].dealias match
-            case ConstantType(constant) =>
-              cursor.focus match {
-                case Some(json) if json.isString && (json.asString.get == constant.value) =>
-
-                case Some(json) if json.isNumber && json.asNumber.get.toInt.isDefined && (json.asNumber.get.toInt.get == constant.value) =>
-
-                case Some(json) if json.isNumber && json.asNumber.get.toLong.isDefined && (json.asNumber.get.toLong.get == constant.value) =>
-
-                case Some(json) if json.isNumber && (json.asNumber.get.toDouble == constant.value) =>
-
-                case Some(json) if json.isBoolean && json.asBoolean.isDefined && (json.asBoolean.get == constant.value) =>
-
-                case maybeJson =>
-                  report.throwError(s"Literal type match error: json value is [$maybeJson] constant value is [${constant.value}]")
-              }
-
         case '[List[t]] => 
           validateJsonArray(key, cursor) { value => 
             validateJsonSchema[t](key, value.hcursor)
