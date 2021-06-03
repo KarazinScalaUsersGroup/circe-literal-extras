@@ -73,7 +73,7 @@ object macros:
         case Varargs(argExprs) =>
 
           val stringContextParts = getStringContextParts(sc)
-          
+
           val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
 
           val jsonSchema = makeJsonSchema(stringContextParts, deconstructArguments(freshKey)(argExprs))
@@ -271,11 +271,11 @@ object macros:
               case v: Double  ⇒ Json.fromDoubleOrNull(v)
               case v: String  ⇒ Json.fromString(v)
               case v: Boolean ⇒ Json.fromBoolean(v)
-              case _ ⇒ report.throwError(s"Macros does not yet support this type [${Type.show[t]}]")  
+              case _ ⇒ report.throwError(s"Macros does not yet support this type [${Type.show[t]}]")
 
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
-      
+
             case OrType(typeLeft @ OrType(_, _), typeRight) ⇒
               (typeLeft.asType, typeRight.asType) match
                 case ('[f], '[t]) ⇒ deconstructArgument[f].hcursor.downField(freshKey.value).focus match
@@ -283,7 +283,7 @@ object macros:
                     Json.fromFields((freshKey.value, Json.fromValues(array :+ deconstructArgument[t])) :: Nil)
                   }.get
                   case _ ⇒ throw EncodeError(s"Unexpected union type: expected `OrType` got [${Type.show[f]}]")
-      
+
             case OrType(typeLeft, typeRight) ⇒
               (typeLeft.asType, typeRight.asType) match
                 case ('[f], '[t])  =>
@@ -484,7 +484,7 @@ object macros:
                   report.throwError(s"Literal type match error: json value is [$maybeJson] constant value is [${constant.value}]")
               }
 
-        case '[List[t]] => 
+        case '[List[t]] =>
           validateJsonArray(key, cursor) { value => 
             validateJsonSchema[t](key, value.hcursor)
           }
@@ -576,7 +576,7 @@ object macros:
                 case invalid :: valid :: Nil ⇒
                   validateJsonSchema[t](s"$key.Invalid", invalid.hcursor)
                   validateJsonSchema[f](s"$key.Valid", valid.hcursor)
-                case _ ⇒ // imposible case  
+                case _ ⇒ // imposible case
             case keys =>
               throw EncodeError(
                 s"""Unexpected json type by key [$key]. Validated Invalid or Valid key are expected.
@@ -592,7 +592,7 @@ object macros:
         case '[Option[t]] =>
           if (!cursor.value.isNull)
             validateJsonSchema[t](key, cursor)
-        
+
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
             case OrType(typeLeft, typeRight) ⇒
