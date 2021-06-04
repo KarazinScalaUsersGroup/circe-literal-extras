@@ -64,16 +64,20 @@ object macros:
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
 
-    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
+    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]], extraArgsExpr: String = "")
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
+
       import quotes.reflect._
 
       argsExpr match
-        case Varargs(argExprs)  => apply[T](sc, argExprs)
-        case unexpected         => report.throwError(s"Expected Varargs got [$unexpected]")
+        case Varargs(argExprs) => apply[T](sc, argExprs, extraArgsExpr)
+        case unexpected        => report.throwError(s"Expected Varargs got [$unexpected]")
 
-    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]], extraArgsExpr: Expr[Seq[Any]])
-                (using tpe: Type[T], quotes: Quotes): Expr[Json] =
+    end apply
+
+    private def apply[T](sc: Expr[StringContext], argsExprs: Seq[Expr[Any]], literal: String)
+                        (using tpe: Type[T], quotes: Quotes): Expr[Json] =
+
       import quotes.reflect._
 
       (argsExpr, extraArgsExpr) match
@@ -85,7 +89,9 @@ object macros:
 
       import quotes.reflect._
 
-      val stringContextParts: List[String] = getStringContextParts(sc)
+      val stringContextParts: List[String] = getStringContextParts(sc) getStringContextParts(sc) match
+        case head :: tail => head.replaceFirst("\\{", s"{$literal") :: tail
+        case Nil          => report.throwError(s"Encode error: `StringContext` contains zero parts")
 
       val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
 
@@ -96,10 +102,10 @@ object macros:
 
         case Failure(EncodeError(error)) =>
           report.throwError(s"Encode error: [$error]")
-  
+
         case Failure(EncodeWarning(warning)) =>
           report.warning(s"Encode warning: [$warning]")
-  
+
         case Failure(error) =>
           report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
       }
@@ -275,7 +281,7 @@ object macros:
 
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
-      
+
             case OrType(typeLeft @ OrType(_, _), typeRight) ⇒
               (typeLeft.asType, typeRight.asType) match
                 case ('[f], '[t]) ⇒ deconstructArgument[f].hcursor.downField(freshKey.value).focus match
@@ -283,7 +289,7 @@ object macros:
                     Json.fromFields((freshKey.value, Json.fromValues(array :+ deconstructArgument[t])) :: Nil)
                   }.get
                   case _ ⇒ throw EncodeError(s"Unexpected union type: expected `OrType` got [${Type.show[f]}]")
-      
+
             case OrType(typeLeft, typeRight) ⇒
               (typeLeft.asType, typeRight.asType) match
                 case ('[f], '[t])  =>
@@ -558,7 +564,7 @@ object macros:
                 case invalid :: valid :: Nil ⇒
                   validateJsonSchema[t](s"$key.Invalid", invalid.hcursor)
                   validateJsonSchema[f](s"$key.Valid", valid.hcursor)
-                case _ ⇒ // imposible case  
+                case _ ⇒ // imposible case
             case keys =>
               throw EncodeError(
                 s"""Unexpected json type by key [$key]. Validated Invalid or Valid key are expected.
@@ -574,7 +580,7 @@ object macros:
         case '[Option[t]] =>
           if (!cursor.value.isNull)
             validateJsonSchema[t](key, cursor)
-        
+
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
             case OrType(typeLeft, typeRight) ⇒
