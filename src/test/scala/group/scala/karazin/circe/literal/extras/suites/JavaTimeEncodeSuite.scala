@@ -1,9 +1,11 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import io.circe.syntax._
 import io.circe.{Json, JsonObject, Encoder, Codec}
 import org.scalacheck.Prop._
 import java.time._
+
+import group.scala.karazin.circe.literal.extras.macros
 
 class JavaTimeEncodeSuite extends munit.ScalaCheckSuite:
 

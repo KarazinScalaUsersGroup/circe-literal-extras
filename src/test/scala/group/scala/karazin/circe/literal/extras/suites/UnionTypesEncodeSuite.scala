@@ -1,4 +1,4 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import io.circe.syntax._
 import io.circe.parser
@@ -6,6 +6,7 @@ import io.circe.Json
 import org.scalacheck._
 import org.scalacheck.Prop._
 
+import group.scala.karazin.circe.literal.extras.macros
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class UnionTypesEncodeSuite extends munit.ScalaCheckSuite:

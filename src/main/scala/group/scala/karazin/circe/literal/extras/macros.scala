@@ -64,33 +64,28 @@ object macros:
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
 
-    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]], extraArgsExpr: String = "")
+    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
+                (using tpe: Type[T], quotes: Quotes): Expr[Json] =
+    apply[T](sc, argsExpr, literalPrefix = "")
+
+    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]], literalPrefix: String)
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
 
       import quotes.reflect._
 
       argsExpr match
-        case Varargs(argExprs) => apply[T](sc, argExprs, extraArgsExpr)
+        case Varargs(argExprs) => apply[T](sc, argExprs, literalPrefix)
         case unexpected        => report.throwError(s"Expected Varargs got [$unexpected]")
 
     end apply
 
-    private def apply[T](sc: Expr[StringContext], argsExprs: Seq[Expr[Any]], literal: String)
+    private def apply[T](sc: Expr[StringContext], argsExprs: Seq[Expr[Any]], extraLiteral: String)
                         (using tpe: Type[T], quotes: Quotes): Expr[Json] =
 
       import quotes.reflect._
 
-      (argsExpr, extraArgsExpr) match
-        case (Varargs(argExprs), Varargs(extraArgsExprs)) => apply[T](sc, argExprs ++ extraArgsExprs)
-        case unexpected                                   => report.throwError(s"Expected Varargs got [$unexpected]")
-
-    def apply[T](sc: Expr[StringContext], argsExprs: Seq[Expr[Any]])
-                (using tpe: Type[T], quotes: Quotes): Expr[Json] =
-
-      import quotes.reflect._
-
-      val stringContextParts: List[String] = getStringContextParts(sc) getStringContextParts(sc) match
-        case head :: tail => head.replaceFirst("\\{", s"{$literal") :: tail
+      val stringContextParts: List[String] = getStringContextParts(sc) match
+        case head :: tail => head.replaceFirst("\\{", s"{$extraLiteral") :: tail
         case Nil          => report.throwError(s"Encode error: `StringContext` contains zero parts")
 
       val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
@@ -109,12 +104,14 @@ object macros:
         case Failure(error) =>
           report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
       }
-      makeJson(sc, argsExprs)
+      
+      makeJson(stringContextParts, argsExprs)
 
     end apply
 
-    def makeJson(sc: Expr[StringContext], argExprs: Seq[Expr[Any]])(using quotes: Quotes): Expr[Json] =
+    def makeJson(stringContextParts: List[String], argExprs: Seq[Expr[Any]])(using quotes: Quotes): Expr[Json] =
       import quotes.reflect._
+      import quoted.ToExpr.StringContextToExpr
 
       val argEncodedExprs = argExprs.map {
          case '{ $arg: tp } =>
@@ -129,7 +126,9 @@ object macros:
 
       val newArgsExpr = Varargs(argEncodedExprs)
 
-      '{ parser.parse($sc.s($newArgsExpr: _*)).toOption.get }
+      val sc = StringContextToExpr(StringContext(stringContextParts: _*))
+
+      '{ parser.parse({$sc.s($newArgsExpr: _*)}).toOption.get }
 
     end makeJson
 
