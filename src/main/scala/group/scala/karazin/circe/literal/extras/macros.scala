@@ -230,7 +230,7 @@ object macros:
         case '[Vector[t]] =>
           Json.arr(deconstructArgument[t])
 
-        case '[Map[f, t]] if deconstructArgument[f].isString =>
+        case '[Map[String, t]] =>
           Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
     
         case '[Iterable[t]] =>
@@ -265,7 +265,7 @@ object macros:
 
         case '[Invalid[t]] =>
           Json.fromFields(("Invalid", deconstructArgument[t]) :: Nil)
-    
+
         case '[Valid[t]] =>
           Json.fromFields(("Valid", deconstructArgument[t]) :: Nil)
 
@@ -491,13 +491,13 @@ object macros:
             validateJsonSchema[t](key, value.hcursor)
           }
 
-        case '[Map[f, t]] =>
-          validateJsonObject(key, cursor) { key =>
-            cursor.downField(key).success match
-              case Some(cursor) => validateJsonSchema[t](key, cursor)
-              case None         => // intentionally blank
+        case '[Map[String, t]] =>
+          validateJsonObject(key, cursor) { subKey =>
+            cursor.downField(subKey).success match
+              case Some(cursor) => validateJsonSchema[t](subKey, cursor)
+              case None         => throw EncodeError(s"""Missing required key [${s"$key.$subKey"}]""")
           }
-    
+
         case '[Iterable[t]] =>
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
@@ -551,7 +551,7 @@ object macros:
 
         case '[Valid[t]] =>
           validateJsonSchema[t](key, cursor.downField("Valid").success.get)
-      
+
         case '[Validated[t, f]] =>
           cursor.keys match
             case Some(keys) if keys.size == 1 && keys.head == "Invalid" =>
