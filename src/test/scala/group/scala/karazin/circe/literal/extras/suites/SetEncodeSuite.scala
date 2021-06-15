@@ -1,10 +1,11 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import org.scalacheck._
 import org.scalacheck.Prop._
 import io.circe.parser
 import io.circe.syntax._
 import io.circe.{Json, JsonObject, Encoder, Codec}
+import group.scala.karazin.circe.literal.extras._
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class SetEncodeSuite extends munit.ScalaCheckSuite:
