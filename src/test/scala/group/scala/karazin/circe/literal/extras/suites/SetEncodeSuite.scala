@@ -129,3 +129,30 @@ class SetEncodeSuite extends munit.ScalaCheckSuite:
     }
 
   }
+
+  test("corrupted ints parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Set[Int]]('sc, 'args) }
+
+          encode"[ -1, null ]"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
+  test("corrupted options parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[Set[Option[Int]]]('sc, 'args) }
+          encode"[ null, 42, { } ]"
+      """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
