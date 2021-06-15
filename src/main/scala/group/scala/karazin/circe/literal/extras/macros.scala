@@ -63,42 +63,55 @@ object macros:
     private val ZoneOffsetUnit = java.time.ZoneOffset.MIN
 
     private val CurrencyUnit = java.util.Currency.getInstance("USD")
-    
+
     def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]])
+                (using tpe: Type[T], quotes: Quotes): Expr[Json] =
+    apply[T](sc, argsExpr, literalPrefix = "")
+
+    def apply[T](sc: Expr[StringContext], argsExpr: Expr[Seq[Any]], literalPrefix: String)
                 (using tpe: Type[T], quotes: Quotes): Expr[Json] =
 
       import quotes.reflect._
 
       argsExpr match
-        case Varargs(argExprs) =>
+        case Varargs(argExprs) => apply[T](sc, argExprs, literalPrefix)
+        case unexpected        => report.throwError(s"Expected Varargs got [$unexpected]")
 
-          val stringContextParts = getStringContextParts(sc)
-          
-          val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
-
-          val jsonSchema = makeJsonSchema(stringContextParts, deconstructArguments(freshKey)(argExprs))
-
-          ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using freshKey)) match {
-            case Success(_) => // intentionally blank
-
-            case Failure(EncodeError(error)) =>
-              report.throwError(s"Encode error: [$error]")
-
-            case Failure(EncodeWarning(warning)) =>
-              report.warning(s"Encode warning: [$warning]")
-
-            case Failure(error) =>
-              report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
-          }
-          makeJson(sc, argExprs)
-
-        case unexpected =>
-           report.throwError(s"Expected Varargs got [$unexpected]")
-    
     end apply
 
-    def makeJson(sc: Expr[StringContext], argExprs: Seq[Expr[Any]])(using quotes: Quotes): Expr[Json] =
+    private def apply[T](sc: Expr[StringContext], argsExprs: Seq[Expr[Any]], extraLiteral: String)
+                        (using tpe: Type[T], quotes: Quotes): Expr[Json] =
+
       import quotes.reflect._
+
+      val stringContextParts: List[String] = getStringContextParts(sc) match
+        case head :: tail => head.replaceFirst("\\{", s"{$extraLiteral") :: tail
+        case Nil          => report.throwError(s"Encode error: `StringContext` contains zero parts")
+
+      val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
+
+      val jsonSchema: Json = makeJsonSchema(stringContextParts, deconstructArguments(freshKey)(argsExprs))
+
+      ScalaTry(validateJsonSchema[T]("*", jsonSchema.hcursor)(using freshKey)) match {
+        case Success(_) => // intentionally blank
+
+        case Failure(EncodeError(error)) =>
+          report.throwError(s"Encode error: [$error]")
+
+        case Failure(EncodeWarning(warning)) =>
+          report.warning(s"Encode warning: [$warning]")
+
+        case Failure(error) =>
+          report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
+      }
+      
+      makeJson(stringContextParts, argsExprs)
+
+    end apply
+
+    def makeJson(stringContextParts: List[String], argExprs: Seq[Expr[Any]])(using quotes: Quotes): Expr[Json] =
+      import quotes.reflect._
+      import quoted.ToExpr.StringContextToExpr
 
       val argEncodedExprs = argExprs.map {
          case '{ $arg: tp } =>
@@ -113,7 +126,9 @@ object macros:
 
       val newArgsExpr = Varargs(argEncodedExprs)
 
-      '{ parser.parse($sc.s($newArgsExpr: _*)).toOption.get }
+      val sc = StringContextToExpr(StringContext(stringContextParts: _*))
+
+      '{ parser.parse({$sc.s($newArgsExpr: _*)}).toOption.get }
 
     end makeJson
 
@@ -265,7 +280,7 @@ object macros:
 
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
-      
+
             case OrType(typeLeft @ OrType(_, _), typeRight) ⇒
               (typeLeft.asType, typeRight.asType) match
                 case ('[f], '[t]) ⇒ deconstructArgument[f].hcursor.downField(freshKey.value).focus match
@@ -273,7 +288,7 @@ object macros:
                     Json.fromFields((freshKey.value, Json.fromValues(array :+ deconstructArgument[t])) :: Nil)
                   }.get
                   case _ ⇒ throw EncodeError(s"Unexpected union type: expected `OrType` got [${Type.show[f]}]")
-      
+
             case OrType(typeLeft, typeRight) ⇒
               (typeLeft.asType, typeRight.asType) match
                 case ('[f], '[t])  =>
@@ -548,7 +563,7 @@ object macros:
                 case invalid :: valid :: Nil ⇒
                   validateJsonSchema[t](s"$key.Invalid", invalid.hcursor)
                   validateJsonSchema[f](s"$key.Valid", valid.hcursor)
-                case _ ⇒ // imposible case  
+                case _ ⇒ // imposible case
             case keys =>
               throw EncodeError(
                 s"""Unexpected json type by key [$key]. Validated Invalid or Valid key are expected.
@@ -564,7 +579,7 @@ object macros:
         case '[Option[t]] =>
           if (!cursor.value.isNull)
             validateJsonSchema[t](key, cursor)
-        
+
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
             case OrType(typeLeft, typeRight) ⇒

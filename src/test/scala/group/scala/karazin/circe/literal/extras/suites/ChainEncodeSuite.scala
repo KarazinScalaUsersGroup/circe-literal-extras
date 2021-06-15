@@ -1,4 +1,4 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import io.circe._
 import io.circe.syntax._
@@ -6,6 +6,7 @@ import org.scalacheck._
 import org.scalacheck.Prop._
 import cats.laws.discipline.arbitrary._
 import cats.data.Chain
+import group.scala.karazin.circe.literal.extras.macros
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class ChainEncodeSuite extends munit.ScalaCheckSuite:

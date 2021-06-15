@@ -1,41 +1,28 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
-import io.circe._
-import io.circe.syntax._
+import munit._
 import org.scalacheck._
 import org.scalacheck.Prop._
+import io.circe.syntax._
+import io.circe.parser
+import io.circe.{Json, JsonObject, Codec}
+
+import group.scala.karazin.circe.literal.extras.macros
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
-class VectorEncodeSuite extends munit.ScalaCheckSuite:
+class IterableEncodeSuite extends munit.ScalaCheckSuite:
 
-  property("inlined Vector with Int values") {
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Vector[Int]]('sc, 'args) }
-
-    forAll { (vector: Vector[Int]) =>
-
-      val result = encode"$vector"
-
-      val expected = vector.asJson
-
-      assertEquals(result, expected)
-
-    }
-  }
-
-  property("inlined Vector of Option Int values") {
+  property("inlined Iterable of Int values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Vector[Option[Int]]]('sc, 'args)}
+        ${macros.encode[Iterable[Int]]('sc, 'args)}
 
-    forAll { (vector: Vector[Option[Int]]) =>
+    forAll { (iterable: Iterable[Int]) =>
 
-      val result: Json = encode"$vector"
+      val result: Json = encode"${iterable}"
 
-      val expected: Json = vector.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -43,7 +30,25 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Vector of primitives with Int values") {
+  property("inlined Iterable of Option Int values") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${macros.encode[Iterable[Option[Int]]]('sc, 'args)}
+
+    forAll { (iterable: Iterable[Option[Int]]) =>
+
+      val result: Json = encode"$iterable"
+
+      val expected: Json = iterable.asJson
+
+      assertEquals(result, expected)
+
+    }
+
+  }
+
+  property("inlined Iterable of primitives with Int values") {
 
     case class Primitive(value: Int) derives Codec.AsObject
 
@@ -51,13 +56,13 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Vector[Primitive]]('sc, 'args)}
+        ${macros.encode[Iterable[Primitive]]('sc, 'args)}
 
-    forAll { (vector: Vector[Primitive]) =>
+    forAll { (iterable: Iterable[Primitive]) =>
 
-      val result: Json = encode"$vector"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = vector.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -65,7 +70,8 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Vector of Option primitives") {
+
+  property("inlined Iterable of Option primitives") {
 
     case class Primitive(value: Int) derives Codec.AsObject
 
@@ -73,13 +79,13 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Vector[Option[Primitive]]]('sc, 'args)}
+        ${macros.encode[Iterable[Option[Primitive]]]('sc, 'args)}
 
-    forAll { (vector: Vector[Option[Primitive]]) =>
+    forAll { (iterable: Iterable[Option[Primitive]]) =>
 
-      val result: Json = encode"$vector"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = vector.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -87,17 +93,17 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Vector of JsonObject values") {
+  property("inlined Iterable of JsonObject values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Vector[JsonObject]]('sc, 'args)}
+        ${macros.encode[Iterable[JsonObject]]('sc, 'args)}
 
-    forAll { (vector: Vector[JsonObject]) =>
+    forAll { (iterable: Iterable[JsonObject]) =>
 
-      val result: Json = encode"$vector"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = vector.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -105,7 +111,7 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Vector of primitives with JsonObject values") {
+  property("inlined Iterable of primitives with JsonObject values") {
 
     case class Primitive(value: JsonObject) derives Codec.AsObject
 
@@ -113,13 +119,13 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Vector[Primitive]]('sc, 'args)}
+        ${macros.encode[Iterable[Primitive]]('sc, 'args)}
 
-    forAll { (vector: Vector[Primitive]) =>
+    forAll { (iterable: Iterable[Primitive]) =>
 
-      val result: Json = encode"$vector"
+      val result: Json = encode"$iterable"
 
-      val expected: Json = vector.asJson
+      val expected: Json = iterable.asJson
 
       assertEquals(result, expected)
 
@@ -132,7 +138,7 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Vector[Int]]('sc, 'args) }
+              ${ macros.encode[Iterable[Int]]('sc, 'args) }
 
           encode"[ -1, null ]"
         """
@@ -146,7 +152,7 @@ class VectorEncodeSuite extends munit.ScalaCheckSuite:
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Vector[Option[Int]]]('sc, 'args) }
+              ${ macros.encode[Iterable[Option[Int]]]('sc, 'args) }
           encode"[ null, 42, { } ]"
       """
     ).headOption match
