@@ -12,7 +12,7 @@ class SetEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[collection.Set[Int]]('sc, 'args)}
+        ${macros.encode[Set[Int]]('sc, 'args)}
 
     forAll { (set: Set[Int]) =>
 
@@ -30,7 +30,7 @@ class SetEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[collection.Set[Option[Int]]]('sc, 'args)}
+        ${macros.encode[Set[Option[Int]]]('sc, 'args)}
 
     forAll { (set: Set[Option[Int]]) =>
 
@@ -52,7 +52,7 @@ class SetEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[collection.Set[Primitive]]('sc, 'args)}
+        ${macros.encode[Set[Primitive]]('sc, 'args)}
 
     forAll { (set: Set[Primitive]) =>
 
@@ -75,7 +75,7 @@ class SetEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[collection.Set[Option[Primitive]]]('sc, 'args)}
+        ${macros.encode[Set[Option[Primitive]]]('sc, 'args)}
 
     forAll { (set: Set[Option[Primitive]]) =>
 
@@ -93,7 +93,7 @@ class SetEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[collection.Set[JsonObject]]('sc, 'args)}
+        ${macros.encode[Set[JsonObject]]('sc, 'args)}
 
     forAll { (set: Set[JsonObject]) =>
 
@@ -115,7 +115,7 @@ class SetEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[collection.Set[Primitive]]('sc, 'args)}
+        ${macros.encode[Set[Primitive]]('sc, 'args)}
 
     forAll { (set: Set[Primitive]) =>
 
