@@ -1,4 +1,4 @@
-//package group.scala.karazin.circe.literal.extras
+//package group.scala.karazin.circe.literal.extras.suites
 //
 //import cats.implicits._
 //import io.circe.syntax._
@@ -6,80 +6,20 @@
 //import io.circe.{Json, JsonObject}
 //import org.scalacheck._
 //import org.scalacheck.Prop._
+//import scala.compiletime.testing.typeCheckErrors
 //
+//import group.scala.karazin.circe.literal.extras.macros
 //import group.scala.karazin.circe.literal.extras.model.{given, _}
-//
-//object EncodeSuite:
-//
-//  extension (inline sc: StringContext)
-//
-//    inline def encode(inline args: Any*): Json =
-//      ${ macros.encode[Foo]('sc, 'args) }
-//
-//  object generators:
-//
-//    val genStr: Gen[String] = Gen.alphaStr
-//
-//    val genJsonObject: Gen[JsonObject] = for {
-//      map <- Arbitrary.arbitrary[Map[String, String]]
-//    } yield JsonObject.fromMap(map collect {
-//      case (key, value) if key.nonEmpty => key -> Json.fromString(value)
-//    })
-//
-//    val genBar: Gen[Bar] = for {
-//      str   <- Arbitrary.arbitrary[String]
-//      bool  <- Arbitrary.arbitrary[Boolean]
-//    } yield Bar(str, bool, ())
-//
-//    val genBarLike: Gen[BarLike] = for {
-//      str   <- Arbitrary.arbitrary[String]
-//      bool  <- Arbitrary.arbitrary[Boolean]
-//    } yield BarLike(str, bool, ())
-//
-//    val genBuzz: Gen[Buzz] = for {
-//      int   <- Arbitrary.arbitrary[Int]
-//      bool  <- Arbitrary.arbitrary[Boolean]
-//      short  <- Arbitrary.arbitrary[Short]
-//    } yield Buzz(int, bool, short)
-//
-//    val genBuzzLike: Gen[BuzzLike] = for {
-//      int   <- Arbitrary.arbitrary[Int]
-//      bool  <- Arbitrary.arbitrary[Boolean]
-//      short  <- Arbitrary.arbitrary[Short]
-//    } yield BuzzLike(int, bool, short)
-//
-//    val genFoo: Gen[Foo] = for {
-//      int  <- Arbitrary.arbitrary[Int]
-//      bar  <- Arbitrary.arbitrary[Option[Bar]]
-//      buzz <- Arbitrary.arbitrary[List[Buzz]]
-//      qux  <- Arbitrary.arbitrary[JsonObject]
-//    } yield Foo(int, bar, buzz, qux)
-//
-//    val genFooLike: Gen[FooLike] = for {
-//      int  <- Arbitrary.arbitrary[Int]
-//      bar  <- Arbitrary.arbitrary[Bar]
-//      buzz <- Arbitrary.arbitrary[List[Buzz]]
-//      qux  <- Arbitrary.arbitrary[JsonObject]
-//    } yield FooLike(int, bar, buzz, qux)
-//
-//    given Arbitrary[String] = Arbitrary(genStr)
-//    given Arbitrary[JsonObject] = Arbitrary(genJsonObject)
-//    given Arbitrary[Buzz] = Arbitrary(genBuzz)
-//    given Arbitrary[BuzzLike] = Arbitrary(genBuzzLike)
-//    given Arbitrary[Bar] = Arbitrary(genBar)
-//    given Arbitrary[BarLike] = Arbitrary(genBarLike)
-//    given Arbitrary[Foo] = Arbitrary(genFoo)
-//    given Arbitrary[FooLike] = Arbitrary(genFooLike)
-//
-//  end generators
-//
-//end EncodeSuite
+//import group.scala.karazin.circe.literal.extras.model._
+//import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 //
 //class EncodeSuite extends munit.ScalaCheckSuite:
-//  import EncodeSuite._
-//  import EncodeSuite.generators.{given, _}
 //
 //  test("raw json parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    lazy val result: Json =
 //      encode"""
@@ -103,45 +43,49 @@
 //                  }
 //                ],
 //                "qux": {
-//                  "str": "str"
+//                  "bool": true
 //                }
 //              }
 //              """
 //
-//      val expected =
-//        parser.parse(
-//          s"""
-//          {
-//            "int": 42,
-//            "bar": {
-//               "str": "str",
-//               "bool": true,
-//               "unit": { }
+//    val expected =
+//      parser.parse(
+//        s"""
+//        {
+//          "int": 42,
+//          "bar": {
+//             "str": "str",
+//             "bool": true,
+//             "unit": { }
+//          },
+//          "buzzes": [
+//            {
+//              "int": 42,
+//              "bool": true,
+//              "short": 4
 //            },
-//            "buzzes": [
-//              {
-//                "int": 42,
-//                "bool": true,
-//                "short": 4
-//              },
-//              {
-//                "int": 42,
-//                "bool": false,
-//                "short": 4
-//              }
-//            ],
-//            qux: {
-//              "str": "str"
+//            {
+//              "int": 42,
+//              "bool": false,
+//              "short": 4
 //            }
+//          ],
+//          "qux": {
+//            "bool": true
 //          }
-//          """
-//        ).toOption.get
+//        }
+//        """
+//      ).toOption.get
 //
-//      assertEquals(result, expected)
+//    assert(result == expected)
 //
 //  }
 //
 //  property("inlined boolean parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (bool: Boolean) =>
 //
@@ -208,9 +152,13 @@
 //
 //  test("corrupted boolean value json object parsing compile error") {
 //
-//    compileErrors(
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
+//
+//    typeCheckErrors(
 //      """
-//        encode\"\"\"
+//        encode""""" + """"
 //                {
 //                  "int": 42,
 //                  "bar": {
@@ -234,13 +182,19 @@
 //                    "str": "str"
 //                  }
 //                }
-//        \"\"\"
+//        """"" + """"
 //      """
-//    )
+//    ).headOption match
+//      case Some(error) => assert(error.message.startsWith("Encode error:"))
+//      case _           => fail("No compilation error was found.")
 //
 //  }
 //
-//  property("inlined int parsing") {
+//  test("inlined int parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (int: Int) =>
 //
@@ -307,9 +261,13 @@
 //
 //  test("corrupted int value json object parsing compile error") {
 //
-//    compileErrors(
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
+//
+//    typeCheckErrors(
 //      """
-//        encode\"\"\"
+//        encode""""" + """"
 //                {
 //                  "int": "corrupted",
 //                  "bar": {
@@ -333,14 +291,19 @@
 //                    "str": "str"
 //                  }
 //                }
-//        \"\"\"
+//        """"" + """"
 //      """
-//    )
+//    ).headOption match
+//      case Some(error) => assert(error.message.startsWith("Encode error:"))
+//      case _           => fail("No compilation error was found.")
 //
 //  }
 //
+//  test("inlined string parsing") {
 //
-//  property("inlined string parsing") {
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (str: String) =>
 //
@@ -407,9 +370,13 @@
 //
 //  test("corrupted string value json object parsing compile error") {
 //
-//    compileErrors(
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
+//
+//    typeCheckErrors(
 //      """
-//        encode\"\"\"
+//        encode""""" + """"
 //                {
 //                  "int": 42,
 //                  "bar": {
@@ -433,13 +400,19 @@
 //                    "str": "str"
 //                  }
 //                }
-//        \"\"\"
+//        """"" + """"
 //      """
-//    )
+//    ).headOption match
+//      case Some(error) => assert(error.message.startsWith("Encode error:"))
+//      case _           => fail("No compilation error was found.")
 //
 //  }
 //
 //  test("empty inlined json object parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    val result =
 //      encode"""
@@ -497,7 +470,11 @@
 //
 //  }
 //
-//  property("inlined json object parsing") {
+//  test("inlined json object parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (jsonObject: JsonObject) =>
 //
@@ -560,9 +537,13 @@
 //
 //  test("corrupted json object value json object parsing compile error") {
 //
-//    compileErrors(
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
+//
+//    typeCheckErrors(
 //      """
-//        encode\"\"\"
+//        encode""""" + """"
 //                {
 //                  "int": 42,
 //                  "bar": {
@@ -584,13 +565,19 @@
 //                  ],
 //                  "qux": "corrupted"
 //                }
-//        \"\"\"
+//        """"" + """"
 //      """
-//    )
+//    ).headOption match
+//      case Some(error) => assert(error.message.startsWith("Encode error:"))
+//      case _           => fail("No compilation error was found.")
 //
 //  }
 //
 //  test("empty buzzes array parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    val result =
 //      encode"""
@@ -625,7 +612,11 @@
 //      assertEquals(result, expected)
 //  }
 //
-//  property("inlined buzzes array parsing") {
+//  test("inlined buzzes array parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (buzzes: List[Buzz]) =>
 //
@@ -673,13 +664,17 @@
 //
 //  test("corrupted buzzes array parsing compile error") {
 //
-//    compileErrors(
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
+//
+//    typeCheckErrors(
 //      """
-//        encode\"\"\"
+//        encode""""" + """"
 //                {
 //                  "int": 42,
 //                  "bar": {
-//                    "int": 42,
+//                    "str": "str",
 //                    "bool": true,
 //                    "unit": { }
 //                  },
@@ -697,13 +692,19 @@
 //                  ],
 //                  "qux": { }
 //                }
-//        \"\"\"
+//        """"" + """"
 //      """
-//    )
+//    ).headOption match
+//      case Some(error) => assert(error.message.startsWith("Encode error:"))
+//      case _           => fail("No compilation error was found.")
 //
 //  }
 //
-//  property("empty bar parsing") {
+//  test("empty bar parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (str: String) =>
 //
@@ -754,7 +755,11 @@
 //    }
 //  }
 //
-//  property("inlined bar object parsing") {
+//  test("inlined bar object parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (bar: Bar) =>
 //
@@ -811,9 +816,13 @@
 //    }
 //  }
 //
-//  property("inlined bar-like object parsing") {
+//  test("inlined bar-like object parsing") {
 //
-//    forAllNoShrink { (barLike: BarLike) =>
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
+//
+//    forAll { (barLike: BarLike) =>
 //
 //      val result =
 //        encode"""
@@ -870,13 +879,17 @@
 //
 //  test("corrupted bar object parsing compile error") {
 //
-//    compileErrors(
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
+//
+//    typeCheckErrors(
 //      """
-//        encode\"\"\"
+//        encode""""" + """"
 //                {
 //                  "int": 42,
 //                  "bar": {
-//                    "int": 42,
+//                    "str": "str",
 //                    "bool": "corrupted",
 //                    "unit": { }
 //                  },
@@ -894,58 +907,68 @@
 //                  ],
 //                  "qux": { }
 //                }
-//        \"\"\"
+//        """"" + """"
 //      """
-//    )
+//    ).headOption match
+//      case Some(error) => assert(error.message.startsWith("Encode error:"))
+//      case _           => fail("No compilation error was found.")
 //  }
 //
-////  property("inlined int, bar, buzzes and qux into foo object parsing") {
-////
-////    forAll { (int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) =>
-////
-////      val result =
-////        encode"""{
-////                    "int": $int,
-////                    "bar": $bar,
-////                    "buzzes": $buzzes,
-////                    "qux": $qux
-////                 }
-////                """
-////
-////      val expected =
-////        parser.parse(
-////          s"""
-////          {
-////            "int": $int,
-////            ${bar.fold(""""bar": null,""") { bar =>
-////              s"""
-////                "bar": {
-////                  "str": "${bar.str}",
-////                  "bool": ${bar.bool},
-////                  "unit": { }
-////                },
-////              """
-////            }}
-////            "buzzes": [${buzzes map { buzz =>
-////              s"""
-////               {
-////                  "int": ${buzz.int},
-////                  "bool": ${buzz.bool},
-////                  "short": ${buzz.short}
-////               }
-////               """} mkString ","
-////            }],
-////            "qux": ${qux.noSpaces}
-////          }
-////          """
-////        )
-////
-////      assertEquals(result, expected.toOption.get)
-////
-////    }
-////  }
+//  test("inlined int, bar, buzzes and qux into foo object parsing") {
 //
-//  property("inlined foo object parsing") {
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
+//
+//    forAll { (int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) =>
+//
+//      val result =
+//        encode"""{
+//                    "int": $int,
+//                    "bar": $bar,
+//                    "buzzes": $buzzes,
+//                    "qux": $qux
+//                 }
+//                """
+//
+//      val expected =
+//        parser.parse(
+//          s"""
+//          {
+//            "int": $int,
+//            ${bar.fold(""""bar": null,""") { bar =>
+//              s"""
+//                "bar": {
+//                  "str": "${bar.str}",
+//                  "bool": ${bar.bool},
+//                  "unit": { }
+//                },
+//              """
+//            }}
+//            "buzzes": [${buzzes map { buzz =>
+//              s"""
+//               {
+//                  "int": ${buzz.int},
+//                  "bool": ${buzz.bool},
+//                  "short": ${buzz.short}
+//               }
+//               """} mkString ","
+//            }],
+//            "qux": ${qux.noSpaces}
+//          }
+//          """
+//        )
+//
+//      assertEquals(result, expected.toOption.get)
+//
+//    }
+//  }
+//
+//  test("inlined foo object parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (foo: Foo) =>
 //
@@ -987,7 +1010,11 @@
 //    }
 //  }
 //
-//  property("inlined foo-like object parsing") {
+//  test("inlined foo-like object parsing") {
+//
+//    extension (inline sc: StringContext)
+//      inline def encode(inline args: Any*): Json =
+//        ${ macros.encode[Foo]('sc, 'args) }
 //
 //    forAll { (fooLike: FooLike) =>
 //
@@ -1024,5 +1051,3 @@
 //
 //    }
 //  }
-//
-//end EncodeSuite

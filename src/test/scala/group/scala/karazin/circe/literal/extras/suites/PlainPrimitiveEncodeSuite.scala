@@ -1,4 +1,4 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import cats.implicits._
 import io.circe.syntax._
@@ -6,8 +6,10 @@ import io.circe.parser
 import io.circe.{Json, JsonObject, Encoder, Codec}
 import org.scalacheck._
 import org.scalacheck.Prop._
-import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 import java.util.Currency
+
+import group.scala.karazin.circe.literal.extras.macros
+import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
 
@@ -1344,4 +1346,25 @@ class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
       assertEquals(result, expected)
     }
 
+  }
+
+  test("corrupted options parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+         import io.circe.{Json, JsonObject, Encoder, Codec}
+
+         case class Bar(value: Int) derives Codec.AsObject
+
+         extension (inline sc: StringContext)
+           inline def encode(inline args: Any*): Json =
+             ${ macros.encode[Bar]('sc, 'args) }
+
+         encode""""" + """"{
+                    "value": 0,
+                    "extra": 2
+                 }""""" + """"
+      """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode warning:"))
+      case _           => fail("No compilation error was found.")
   }
