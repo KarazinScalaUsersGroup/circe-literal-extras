@@ -6,7 +6,6 @@ import cats.implicits._
 import cats.data.{Chain, NonEmptyList, NonEmptyVector, OneAnd, Validated}
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.parser
-import io.circe.KeyEncoder
 import io.circe.syntax._
 import io.circe.{Json, JsonObject, JsonNumber, Encoder, ACursor, HCursor}
 
@@ -231,7 +230,7 @@ object macros:
         case '[Vector[t]] =>
           Json.arr(deconstructArgument[t])
 
-        case '[Map[f, t]] if deconstructArgument[f].isString =>
+        case '[Map[String, t]] =>
           Json.fromFields((StringUnit, deconstructArgument[t]) :: Nil)
     
         case '[Iterable[t]] =>
@@ -492,18 +491,11 @@ object macros:
             validateJsonSchema[t](key, value.hcursor)
           }
 
-        case '[Map[f, t]] =>
-          TypeRepr.of[f].widen.asType match {
-            case '[k] =>
-              Expr.summon[KeyEncoder[k]] match {
-                case Some(expr) =>
-                  validateJsonObject(key, cursor) { key =>
-                    cursor.downField(key).success match
-                      case Some(cursor) => validateJsonSchema[t](key, cursor)
-                      case None         => // intentionally blank
-                  }
-                case None => report.throwError(s"Could not find implicit for [${Type.show[KeyEncoder[k]]}]")
-            }
+        case '[Map[String, t]] =>
+          validateJsonObject(key, cursor) { subKey =>
+            cursor.downField(subKey).success match
+              case Some(cursor) => validateJsonSchema[t](subKey, cursor)
+              case None         => throw EncodeError(s"""Missing required key [${s"$key.$subKey"}]""")
           }
 
         case '[Iterable[t]] =>
