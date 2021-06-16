@@ -2,9 +2,9 @@ name: Scala CI
 
 on:
   pull_request:
-    branches: [ releases/** ]
+    branches: [ releases/**, master ]
   push:
-    branches: [ releases/** ]
+    branches: [ releases/**, master ]
 
 jobs:
   build:
@@ -33,7 +33,7 @@ jobs:
       run: sbt test
 
     - name: Setup authentication for Sonatype
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && github.ref == 'master'
       env:
         SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
         SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
@@ -49,5 +49,5 @@ jobs:
         echo 'credentials += Credentials(Path.userHome / ".sbt" / "credentials")' >> /home/runner/.sbt/1.0/sonatype.sbt
 
     - name: Publish
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && github.ref == 'master'
       run: sbt publish
