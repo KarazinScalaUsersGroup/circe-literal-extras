@@ -1,11 +1,11 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
-import group.scala.karazin.circe.literal.extras.macros
 import io.circe._
 import io.circe.disjunctionCodecs._
 import io.circe.syntax._
 import org.scalacheck.Prop._
 import org.scalacheck._
+import group.scala.karazin.circe.literal.extras.macros
 
 class EitherEncodeSuite extends munit.ScalaCheckSuite:
 
@@ -152,6 +152,7 @@ class EitherEncodeSuite extends munit.ScalaCheckSuite:
       case Some(error) => assert(error.message.startsWith("Encode error:"))
       case _           => fail("No compilation error was found.")
   }
+
   test("corrupted Either parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
