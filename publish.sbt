@@ -1,6 +1,6 @@
-ThisBuild / organization := "group.scala.karazin"
+ThisBuild / organization := "group.scala"
 ThisBuild / organizationName := "Karazin Scala Users Group"
-ThisBuild / organizationHomepage := Some(url("http://example.com/"))
+ThisBuild / organizationHomepage := Some(url("https://github.com/KarazinScalaUsersGroup"))
 
 ThisBuild / scmInfo := Some(
   ScmInfo(
@@ -10,14 +10,14 @@ ThisBuild / scmInfo := Some(
 )
 ThisBuild / developers := List(
   Developer(
-    id    = "identifier",
-    name  = "Name",
-    email = "your@email",
-    url   = url("http://your.url")
+    id    = "IgorWolkov",
+    name  = "Igor Wolkov",
+    email = "igor.wolkov@scala.group",
+    url   = url("https://github.com/IgorWolkov")
   )
 )
 
-ThisBuild / description := "Some description about your project."
+ThisBuild / description := "Compile time literal json validator supporting inlined values based on type schema."
 ThisBuild / licenses := List("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 ThisBuild / homepage := Some(url("https://github.com/KarazinScalaUsersGroup/circe-literal-extras"))
 
