@@ -4,7 +4,7 @@ on:
   push:
     branches:
       # Matches all releases/ branches
-      - 'releases-test/**'
+      - 'releases/**'
 
 jobs:
   build:
@@ -41,13 +41,11 @@ jobs:
           ~/.sbt
         key: ${{ runner.os }}-sbt-${{ hashFiles('**/Dependencies.scala') }}
 
-      # Can be probably removed to speed up publish, since tests occur in a
-      # separate workflow 
-    - name: Run tests
-      run: sbt test
-
     - name: Compile
       run: sbt clean compile
+
+    - name: Run tests
+      run: sbt test
 
     - name: Publish
       run: sbt publish
