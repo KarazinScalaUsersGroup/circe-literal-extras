@@ -5,6 +5,7 @@ on:
     branches:
       # Matches all releases/ branches
       - 'releases/**'
+      - 'snapshots/**'
 
 jobs:
   build:
