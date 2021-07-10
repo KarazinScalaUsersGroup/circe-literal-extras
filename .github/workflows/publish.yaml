@@ -1,0 +1,52 @@
+name: Scala CI
+
+on:
+  push:
+    branches:
+      # Matches all releases/ branches
+      - 'releases/**'
+      - 'snapshots/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup authentication for Sonatype
+      env:
+        SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+        SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      run: |
+        CREDENTIALS_FILE=/home/runner/.sbt/credentials
+        mkdir -p /home/runner/.sbt/1.0/
+        touch $CREDENTIALS_FILE
+        echo "realm=Sonatype Nexus Repository Manager" >> $CREDENTIALS_FILE
+        echo "host=s01.oss.sonatype.org" >> $CREDENTIALS_FILE
+        echo "user=$SONATYPE_USER" >> $CREDENTIALS_FILE
+        echo "password=$SONATYPE_PASSWORD" >> $CREDENTIALS_FILE
+        touch /home/runner/.sbt/1.0/sonatype.sbt
+        echo 'credentials += Credentials(Path.userHome / ".sbt" / "credentials")' >> /home/runner/.sbt/1.0/sonatype.sbt
+
+    - uses: actions/checkout@v2
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        java-version: '11'
+        distribution: 'adopt'
+
+    - name: Cache SBT
+      uses: actions/cache@v2
+      with:
+        path: | 
+          ~/.ivy2/cache
+          ~/.sbt
+        key: ${{ runner.os }}-sbt-${{ hashFiles('**/Dependencies.scala') }}
+
+    - name: Compile
+      run: sbt clean compile
+
+    - name: Run tests
+      run: sbt test
+
+    - name: Publish
+      run: sbt publish
