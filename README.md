@@ -2,17 +2,17 @@
 
 Compile time literal json validator supporting inlined values based on type schema.
 
-An extra module for JSON library for Scala [circe](https://github.com/circe/circe). Supported Scala versions include 3.0.0-RC3.
+An extra module for JSON library for Scala [circe](https://github.com/circe/circe). Supported Scala versions: 3.0.0.
 
-# 🔨 How to build
-
-To be done
-
-# ⭐ Sonatype artifact
+# How to build
 
 To be done
 
-# 👀 Quick example of usage
+# Sonatype artifact
+
+To be done
+
+# Quick example of usage
 Here's a quick example of circe-literal-extras in action:
 
 Define custom type schema (in a separate file):
