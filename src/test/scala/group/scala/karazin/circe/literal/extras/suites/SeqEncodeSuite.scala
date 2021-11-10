@@ -1,9 +1,11 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import io.circe._
 import io.circe.syntax._
 import org.scalacheck._
 import org.scalacheck.Prop._
+
+import group.scala.karazin.circe.literal.extras.macros
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class SeqEncodeSuite extends munit.ScalaCheckSuite:

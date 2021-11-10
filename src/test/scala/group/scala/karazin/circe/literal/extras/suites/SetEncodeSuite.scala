@@ -1,43 +1,25 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
-import io.circe._
-import io.circe.syntax._
 import org.scalacheck._
 import org.scalacheck.Prop._
-import cats.laws.discipline.arbitrary._
-import cats.data.Chain
+import io.circe.parser
+import io.circe.syntax._
+import io.circe.{Json, JsonObject, Encoder, Codec}
+import group.scala.karazin.circe.literal.extras._
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
-class ChainEncodeSuite extends munit.ScalaCheckSuite:
-
-  property("inlined Chain with Int values") {
-
-    extension (inline sc: StringContext)
-      inline def encode(inline args: Any*): Json =
-        ${ macros.encode[Chain[Int]]('sc, 'args) }
-
-    forAll { (chain: Chain[Int]) =>
-
-      val result = encode"$chain"
-
-      val expected = chain.asJson
-
-      assertEquals(result, expected)
-
-    }
-  }
-
-  property("inlined Chain of Option Int values") {
+class SetEncodeSuite extends munit.ScalaCheckSuite:
+  property("inlined Set of Int values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Chain[Option[Int]]]('sc, 'args)}
+        ${macros.encode[Set[Int]]('sc, 'args)}
 
-    forAll { (chain: Chain[Option[Int]]) =>
+    forAll { (set: Set[Int]) =>
 
-      val result: Json = encode"$chain"
+      val result: Json = encode"$set"
 
-      val expected: Json = chain.asJson
+      val expected: Json = set.asJson
 
       assertEquals(result, expected)
 
@@ -45,7 +27,25 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Chain of primitives with Int values") {
+  property("inlined Set of Option Int values") {
+
+    extension (inline sc: StringContext)
+      inline def encode(inline args: Any*): Json =
+        ${macros.encode[Set[Option[Int]]]('sc, 'args)}
+
+    forAll { (set: Set[Option[Int]]) =>
+
+      val result: Json = encode"$set"
+
+      val expected: Json = set.asJson
+
+      assertEquals(result, expected)
+
+    }
+
+  }
+
+  property("inlined Set of primitives with Int values") {
 
     case class Primitive(value: Int) derives Codec.AsObject
 
@@ -53,13 +53,13 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Chain[Primitive]]('sc, 'args)}
+        ${macros.encode[Set[Primitive]]('sc, 'args)}
 
-    forAll { (chain: Chain[Primitive]) =>
+    forAll { (set: Set[Primitive]) =>
 
-      val result: Json = encode"$chain"
+      val result: Json = encode"$set"
 
-      val expected: Json = chain.asJson
+      val expected: Json = set.asJson
 
       assertEquals(result, expected)
 
@@ -68,7 +68,7 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
   }
 
 
-  property("inlined Chain of Option primitives") {
+  property("inlined Set of Option primitives") {
 
     case class Primitive(value: Int) derives Codec.AsObject
 
@@ -76,13 +76,13 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Chain[Option[Primitive]]]('sc, 'args)}
+        ${macros.encode[Set[Option[Primitive]]]('sc, 'args)}
 
-    forAll { (chain: Chain[Option[Primitive]]) =>
+    forAll { (set: Set[Option[Primitive]]) =>
 
-      val result: Json = encode"$chain"
+      val result: Json = encode"$set"
 
-      val expected: Json = chain.asJson
+      val expected: Json = set.asJson
 
       assertEquals(result, expected)
 
@@ -90,17 +90,17 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Chain of JsonObject values") {
+  property("inlined Set of JsonObject values") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Chain[JsonObject]]('sc, 'args)}
+        ${macros.encode[Set[JsonObject]]('sc, 'args)}
 
-    forAll { (chain: Chain[JsonObject]) =>
+    forAll { (set: Set[JsonObject]) =>
 
-      val result: Json = encode"$chain"
+      val result: Json = encode"$set"
 
-      val expected: Json = chain.asJson
+      val expected: Json = set.asJson
 
       assertEquals(result, expected)
 
@@ -108,7 +108,7 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
 
   }
 
-  property("inlined Chain of primitives with JsonObject values") {
+  property("inlined Set of primitives with JsonObject values") {
 
     case class Primitive(value: JsonObject) derives Codec.AsObject
 
@@ -116,13 +116,13 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${macros.encode[Chain[Primitive]]('sc, 'args)}
+        ${macros.encode[Set[Primitive]]('sc, 'args)}
 
-    forAll { (chain: Chain[Primitive]) =>
+    forAll { (set: Set[Primitive]) =>
 
-      val result: Json = encode"$chain"
+      val result: Json = encode"$set"
 
-      val expected: Json = chain.asJson
+      val expected: Json = set.asJson
 
       assertEquals(result, expected)
 
@@ -135,7 +135,7 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Chain[Int]]('sc, 'args) }
+              ${ macros.encode[Set[Int]]('sc, 'args) }
 
           encode"[ -1, null ]"
         """
@@ -149,7 +149,7 @@ class ChainEncodeSuite extends munit.ScalaCheckSuite:
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[Chain[Option[Int]]]('sc, 'args) }
+              ${ macros.encode[Set[Option[Int]]]('sc, 'args) }
           encode"[ null, 42, { } ]"
       """
     ).headOption match

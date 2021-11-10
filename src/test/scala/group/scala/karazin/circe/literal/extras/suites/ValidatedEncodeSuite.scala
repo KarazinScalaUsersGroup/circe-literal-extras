@@ -1,4 +1,4 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import cats.implicits._
 import cats.laws.discipline.arbitrary._
@@ -9,6 +9,8 @@ import io.circe.{Json, parser}
 import io.circe.disjunctionCodecs.encodeValidated
 import org.scalacheck._
 import org.scalacheck.Prop._
+
+import group.scala.karazin.circe.literal.extras.macros
 
 class ValidatedEncodeSuite extends munit.ScalaCheckSuite:
 
@@ -132,11 +134,11 @@ class ValidatedEncodeSuite extends munit.ScalaCheckSuite:
               inline def encode(inline args: Any*): Json =
                 ${ macros.encode[Validated[Option[Int], List[String]]]('sc, 'args) }
 
-            encode""""" + """" 
+            encode""""" + """"
                 {
                   "Invalid": 0,
                   "extra": 0
-                } 
+                }
                 """"" + """"
           """
     ).headOption match
@@ -151,11 +153,11 @@ class ValidatedEncodeSuite extends munit.ScalaCheckSuite:
               inline def encode(inline args: Any*): Json =
                 ${ macros.encode[Validated[Int, List[String]]]('sc, 'args) }
 
-            encode""""" + """" 
+            encode""""" + """"
                 {
                   "Invalid": 0,
                   "Valid": [ ]
-                } 
+                }
                 """"" + """"
           """
     ).headOption match
@@ -170,10 +172,10 @@ class ValidatedEncodeSuite extends munit.ScalaCheckSuite:
               inline def encode(inline args: Any*): Json =
                 ${ macros.encode[Validated[Option[Int], List[String]]]('sc, 'args) }
 
-            encode""""" + """" 
+            encode""""" + """"
                 {
                   "Valid": 0
-                } 
+                }
                 """"" + """"
           """
     ).headOption match
@@ -190,7 +192,7 @@ class ValidatedEncodeSuite extends munit.ScalaCheckSuite:
 
             val value: Validated[List[String], Option[Int]] = ???
 
-            encode""""" + """" 
+            encode""""" + """"
                     $value
                 """"" + """"
           """

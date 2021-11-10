@@ -1,38 +1,41 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import cats.implicits._
-import group.scala.karazin.circe.literal.extras.macros
-import io.circe.syntax._
+import cats.data.NonEmptyList
+import cats.laws.discipline.arbitrary._
 import io.circe._
+import io.circe.syntax._
 import org.scalacheck.Prop._
 import org.scalacheck._
 
-class ListEncodeSuite extends munit.ScalaCheckSuite:
-  
-  property("inlined list of ints") {
+import group.scala.karazin.circe.literal.extras.macros
+
+class NonEmptyListEncodeSuite extends munit.ScalaCheckSuite:
+
+  property("inlined NonEmptyList of ints") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[List[Int]]('sc, 'args) }
-    
-    forAll { (value: List[Int]) =>
-      
+        ${ macros.encode[NonEmptyList[Int]]('sc, 'args) }
+
+    forAll { (value: NonEmptyList[Int]) =>
+
       lazy val result: Json = encode"""$value"""
 
       val expected: Json = value.asJson
-      
+
       assertEquals(result, expected)
     }
 
   }
 
-  property("inlined nested lists parsing") {
+  property("inlined nested NonEmptyLists parsing") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[List[List[Int]]]('sc, 'args) }
+        ${ macros.encode[NonEmptyList[NonEmptyList[Int]]]('sc, 'args) }
 
-    forAll { (value: List[List[Int]]) =>
+    forAll { (value: NonEmptyList[NonEmptyList[Int]]) =>
 
       val result: Json = encode"""$value"""
 
@@ -42,13 +45,13 @@ class ListEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("inlined list of options") {
+  property("inlined NonEmptyList of options") {
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[List[Option[Int]]]('sc, 'args) }
+        ${ macros.encode[NonEmptyList[Option[Int]]]('sc, 'args) }
 
-    forAll { (options: List[Option[Int]]) =>
+    forAll { (options: NonEmptyList[Option[Int]]) =>
 
       lazy val result: Json = encode"""$options"""
 
@@ -63,7 +66,7 @@ class ListEncodeSuite extends munit.ScalaCheckSuite:
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[List[Option[Int]]]('sc, 'args) }
+        ${ macros.encode[NonEmptyList[Option[Int]]]('sc, 'args) }
 
     forAll { (value: Iterable[Int]) =>
 
@@ -75,16 +78,16 @@ class ListEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
-  property("inlined list of Primitive objects") {
+  property("inlined NonEmptyList of Primitive objects") {
 
     case class Primitive(value: Int) derives Codec.AsObject
     given Arbitrary[Primitive] = Arbitrary(Arbitrary.arbitrary[Int] map {v => Primitive(v)})
 
     extension (inline sc: StringContext)
       inline def encode(inline args: Any*): Json =
-        ${ macros.encode[List[Primitive]]('sc, 'args) }
-    
-    forAll { (value: List[Primitive]) =>
+        ${ macros.encode[NonEmptyList[Primitive]]('sc, 'args) }
+
+    forAll { (value: NonEmptyList[Primitive]) =>
 
       val result: Json = encode"$value"
 
@@ -94,13 +97,27 @@ class ListEncodeSuite extends munit.ScalaCheckSuite:
     }
   }
 
+  test("corrupted empty list parsing compile error") {
+    scala.compiletime.testing.typeCheckErrors(
+      """
+          extension (inline sc: StringContext)
+            inline def encode(inline args: Any*): Json =
+              ${ macros.encode[NonEmptyList[Int]]('sc, 'args) }
+
+          encode"[ ]"
+        """
+    ).headOption match
+      case Some(error) => assert(error.message.startsWith("Encode error:"))
+      case _           => fail("No compilation error was found.")
+  }
+
   test("corrupted ints parsing compile error") {
     scala.compiletime.testing.typeCheckErrors(
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[List[Int]]('sc, 'args) }
-           
+              ${ macros.encode[NonEmptyList[Int]]('sc, 'args) }
+
           encode"[ -1, null ]"
         """
     ).headOption match
@@ -113,9 +130,9 @@ class ListEncodeSuite extends munit.ScalaCheckSuite:
       """
           extension (inline sc: StringContext)
             inline def encode(inline args: Any*): Json =
-              ${ macros.encode[List[Option[Int]]]('sc, 'args) }
+              ${ macros.encode[NonEmptyList[Option[Int]]]('sc, 'args) }
 
-          encode"[ null, 42, { } ]" 
+          encode"[ null, 42, { } ]"
       """
     ).headOption match
       case Some(error) => assert(error.message.startsWith("Encode error:"))

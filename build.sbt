@@ -8,15 +8,15 @@ lazy val root = project
   .settings(testFrameworks += new TestFramework("munit.Framework"))
   .settings(Test / parallelExecution := true)
 
-lazy val dependencies = cats ++ circe ++ munit
+lazy val dependencies = circe ++ munit
 
 testFrameworks += new TestFramework("munit.Framework")
 
 lazy val commonSettings = Seq(
-    scalaVersion     := "3.0.0-RC3",
+    scalaVersion     := "3.0.0",
     organization     := "group.scala.karazin",
     organizationName := "Karazin Scala Users Group",
-    version          := "0.1.0-SNAPSHOT",
+    version          := "0.1.0",
     scalacOptions ++= Seq(
         "-deprecation",
         "-unchecked",

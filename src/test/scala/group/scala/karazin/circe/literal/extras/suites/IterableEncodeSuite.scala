@@ -1,4 +1,4 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.suites
 
 import munit._
 import org.scalacheck._
@@ -6,6 +6,8 @@ import org.scalacheck.Prop._
 import io.circe.syntax._
 import io.circe.parser
 import io.circe.{Json, JsonObject, Codec}
+
+import group.scala.karazin.circe.literal.extras.macros
 import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
 
 class IterableEncodeSuite extends munit.ScalaCheckSuite:
