@@ -75,7 +75,7 @@ object macros:
 
       argsExpr match
         case Varargs(argExprs) => apply[T](sc, argExprs, literalPrefix)
-        case unexpected        => report.throwError(s"Expected Varargs got [$unexpected]")
+        case unexpected        => report.errorAndAbort(s"Expected Varargs got [$unexpected]")
 
     end apply
 
@@ -86,7 +86,7 @@ object macros:
 
       val stringContextParts: List[String] = getStringContextParts(sc) match
         case head :: tail => head.replaceFirst("\\{", s"{$extraLiteral") :: tail
-        case Nil          => report.throwError(s"Encode error: `StringContext` contains zero parts")
+        case Nil          => report.errorAndAbort(s"Encode error: `StringContext` contains zero parts")
 
       val freshKey: CustomFreshKey = CustomFreshKey(generateFreshKey(stringContextParts))
 
@@ -96,13 +96,13 @@ object macros:
         case Success(_) => // intentionally blank
 
         case Failure(EncodeError(error)) =>
-          report.throwError(s"Encode error: [$error]")
+          report.errorAndAbort(s"Encode error: [$error]")
 
         case Failure(EncodeWarning(warning)) =>
           report.warning(s"Encode warning: [$warning]")
 
         case Failure(error) =>
-          report.throwError(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
+          report.errorAndAbort(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
       }
       
       makeJson(stringContextParts, argsExprs)
@@ -121,7 +121,7 @@ object macros:
                    case Some(expr) =>
                      '{ $expr.apply($arg.asInstanceOf[t]) }
                    case None =>
-                      report.throwError(s"Could not find implicit for [${Type.show[Encoder[tp]]}]", arg)
+                      report.errorAndAbort(s"Could not find implicit for [${Type.show[Encoder[tp]]}]", arg)
       }
 
       val newArgsExpr = Varargs(argEncodedExprs)
@@ -144,11 +144,11 @@ object macros:
               part
 
             case unexpected =>
-              report.throwError(s"Cannot extract string literal from [$unexpected]")
+              report.errorAndAbort(s"Cannot extract string literal from [$unexpected]")
           }
 
         case unexpected =>
-          report.throwError(s"Cannot extract StringContext parts from [$unexpected]")
+          report.errorAndAbort(s"Cannot extract StringContext parts from [$unexpected]")
 
     end getStringContextParts
     
@@ -162,7 +162,7 @@ object macros:
 
       parser.parse(jsonString) match
         case Right(json) => json
-        case Left(error) => report.throwError(s"Cannot prove json structure for \n$jsonString\n Reason: [$error]")
+        case Left(error) => report.errorAndAbort(s"Cannot prove json structure for \n$jsonString\n Reason: [$error]")
 
     end makeJsonSchema   
     
@@ -180,7 +180,7 @@ object macros:
       Type.of[T] match
         case '[EmptyTuple]      => List.empty[Type[_]]
         case '[field *: fields] => Type.of[field] :: deconstructProductFieldTypes[fields]
-        case '[tpe]             => report.throwError(s"Macros implementation error. Unexpected type. Required tuple but found [${Type.show[tpe]}]")
+        case '[tpe]             => report.errorAndAbort(s"Macros implementation error. Unexpected type. Required tuple but found [${Type.show[tpe]}]")
 
     end deconstructProductFieldTypes
     
@@ -210,7 +210,7 @@ object macros:
           }
 
         case expr =>
-          report.throwError(s"Macros implementation error. Unexpected expression. Required Some(Mirror.ProductOf[T]) but found [$expr]")
+          report.errorAndAbort(s"Macros implementation error. Unexpected expression. Required Some(Mirror.ProductOf[T]) but found [$expr]")
 
     end deconstructArgumentProduct
     
@@ -273,10 +273,10 @@ object macros:
           Json.fromFields((freshKey.value, Json.arr(deconstructArgument[t], deconstructArgument[f])) :: Nil)
 
         case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[Map] =>
-          report.throwError(s"Macros does not yet support this type [${Type.show[tpe]}]")
+          report.errorAndAbort(s"Macros does not yet support this type [${Type.show[tpe]}]")
     
         case '[OneAnd[_, _]] =>
-          report.throwError(s"Macros does not yet support this type cats.data.OneAnd")
+          report.errorAndAbort(s"Macros does not yet support this type cats.data.OneAnd")
 
         case '[t] if s"${TypeRepr.of[t].widen}".startsWith("OrType") ⇒
           TypeRepr.of[t].widen match
@@ -391,7 +391,7 @@ object macros:
           Json.fromFields(deconstructArgumentProduct[t])
       
         case '[tpe] =>
-          report.throwError(s"Macros implementation error. Unsupported type. Required " +
+          report.errorAndAbort(s"Macros implementation error. Unsupported type. Required " +
             s"Unit, Boolean, java.lang.Boolean, Byte, java.lang.Byte,  Short, " +
             s"java.lang.Short, Int, java.lang.Integer, Long, java.lang.Long, Float, java.lang.Float, Double, " +
             s"java.lang.Double, String, Char, java.lang.Character, BigInt, java.math.BigInteger, BigDecimal, " +
@@ -613,7 +613,7 @@ object macros:
           deconstructTypeSchemaProduct[t](key, cursor)
 
         case '[unexpected] =>
-          report.throwError(s"Macros implementation error. Unsupported type [${Type.show[unexpected]}]")
+          report.errorAndAbort(s"Macros implementation error. Unsupported type [${Type.show[unexpected]}]")
 
     end validateJsonSchema
 

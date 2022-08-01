@@ -3,9 +3,9 @@ import sbt._
 object Dependencies {
 
   object Version {
-    val cats  = "2.6.0"
-    val circe = "0.14.1"
-    val munit = "0.7.26"
+    val cats  = "2.8.0"
+    val circe = "0.15.0-M1"
+    val munit = "1.0.0-M6"
   }
   
   lazy val cats: Seq[ModuleID] = Seq(

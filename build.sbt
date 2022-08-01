@@ -13,10 +13,11 @@ lazy val dependencies = circe ++ munit
 testFrameworks += new TestFramework("munit.Framework")
 
 lazy val commonSettings = Seq(
-    scalaVersion     := "3.0.0",
+    scalaVersion        := "3.1.2",
+    crossScalaVersions  := Seq("2.13", "3.0.0", "3.1.0", "3.1.1"),
     organization     := "group.scala.karazin",
     organizationName := "Karazin Scala Users Group",
-    version          := "0.1.0",
+    version          := "0.2.0",
     scalacOptions ++= Seq(
         "-deprecation",
         "-unchecked",
