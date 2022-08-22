@@ -1,4 +1,4 @@
-package group.scala.karazin.circe.literal.extras
+package group.scala.karazin.circe.literal.extras.arbitraries
 
 import cats.implicits._
 import io.circe.syntax._

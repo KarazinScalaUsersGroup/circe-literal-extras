@@ -13,6 +13,9 @@ object model:
   case class Foo(int: Int, bar: Option[Bar], buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
   case class FooLike(int: Int, bar: Bar, buzzes: List[Buzz], qux: JsonObject) derives Codec.AsObject
 
+  enum ConstantEnum:
+    case Const1, Const2
+
   given tToJson[T: Encoder]: Conversion[T, Json] = summon[Encoder[T]](_)
   given optionToJson[T: Encoder]: Conversion[Option[T], Json] = summon[Encoder[Option[T]]](_)
   given listToJson[T: Encoder]: Conversion[List[T], Json] = summon[Encoder[List[T]]](_)

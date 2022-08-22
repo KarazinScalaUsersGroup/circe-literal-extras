@@ -104,7 +104,7 @@ object macros:
         case Failure(error) =>
           report.errorAndAbort(s"Unexpected error: [${error.getMessage}]. Cause: [${error.getStackTrace mkString "\n"}]")
       }
-      
+
       makeJson(stringContextParts, argsExprs)
 
     end apply
@@ -387,12 +387,15 @@ object macros:
         case '[JsonNumber] =>
           Json.fromJsonNumber(JsonNumberUnit)
 
+        case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[scala.reflect.Enum] =>
+          Json.fromString(StringUnit)
+
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           Json.fromFields(deconstructArgumentProduct[t])
       
         case '[tpe] =>
           report.errorAndAbort(s"Macros implementation error. Unsupported type. Required " +
-            s"Unit, Boolean, java.lang.Boolean, Byte, java.lang.Byte,  Short, " +
+            s"Unit, Boolean, java.lang.Boolean, Byte, java.lang.Byte, Short, " +
             s"java.lang.Short, Int, java.lang.Integer, Long, java.lang.Long, Float, java.lang.Float, Double, " +
             s"java.lang.Double, String, Char, java.lang.Character, BigInt, java.math.BigInteger, BigDecimal, " +
             s"java.math.BigDecimal, java.util.UUID, java.time.Duration, java.time.Instant, java.time.Period, " +
@@ -460,19 +463,19 @@ object macros:
                 case Some(cursor) => validateJsonSchema[tpe](s"$keyPrefix.$key", cursor)
                 case None         => throw EncodeError(s"""Missing required key [${s"$keyPrefix.$key"}]""")
           }
-    
+
         case expr =>
           throw EncodeError(s"Macros implementation error. Unexpected expression. Required Some(Mirror.ProductOf[T]) but found [$expr]")
 
     end deconstructTypeSchemaProduct
-    
+
     def validateJsonSchema[T: Type](key: String, cursor: HCursor) (using freshKey: CustomFreshKey)
                                    (using quotes: Quotes): Unit =
       import quotes.reflect._
-      
+
       Type.of[T] match
-        case '[List[t]] => 
-          validateJsonArray(key, cursor) { value => 
+        case '[List[t]] =>
+          validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
 
@@ -480,7 +483,7 @@ object macros:
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
-    
+
         case '[Set[t]] =>
           validateJsonArray(key, cursor, uniqueValuesContainer = true) { value =>
             validateJsonSchema[t](key, value.hcursor)
@@ -502,7 +505,7 @@ object macros:
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
           }
-    
+
         case '[Chain[t]] =>
           validateJsonArray(key, cursor) { value =>
             validateJsonSchema[t](key, value.hcursor)
@@ -608,6 +611,9 @@ object macros:
               '[java.time.MonthDay] | '[java.time.OffsetTime] | '[java.time.OffsetDateTime] | '[java.time.Year] |
               '[java.time.YearMonth] | '[java.time.ZonedDateTime] | '[java.time.ZoneOffset] | '[java.util.Currency] =>
           validatePrimitives[T](key, cursor)
+
+        case '[tpe] if TypeRepr.of[tpe] <:< TypeRepr.of[scala.reflect.Enum] =>
+          validatePrimitives[String](key, cursor)
 
         case '[t] if TypeRepr.of[t] <:< TypeRepr.of[Product] =>
           deconstructTypeSchemaProduct[t](key, cursor)

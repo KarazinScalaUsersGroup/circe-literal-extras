@@ -1,21 +1,16 @@
 package group.scala.karazin.circe.literal.extras.suites
 
-import cats.implicits._
-import io.circe.syntax._
-import io.circe.parser
-import io.circe.{Json, JsonObject, Encoder, Codec}
-import org.scalacheck._
-import org.scalacheck.Prop._
-import java.util.Currency
+import cats.implicits.*
+import io.circe.syntax.*
+import io.circe.{Codec, Decoder, Encoder, Json, JsonObject, parser}
+import org.scalacheck.*
+import org.scalacheck.Prop.*
 
+import java.util.Currency
 import group.scala.karazin.circe.literal.extras.macros
-import group.scala.karazin.circe.literal.extras.arbitraries.instances.{given, _}
+import group.scala.karazin.circe.literal.extras.arbitraries.instances.{*, given}
 
 class PlainPrimitiveEncodeSuite extends munit.ScalaCheckSuite:
-
-  override def scalaCheckTestParameters =
-    super.scalaCheckTestParameters
-      .withMinSuccessfulTests(1)
 
   property("inlined Unit value") {
     case class Primitive(value: Unit) derives Codec.AsObject
